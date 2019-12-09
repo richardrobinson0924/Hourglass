@@ -1,0 +1,166 @@
+import 'dart:async';
+
+import 'package:countdown/add_event.dart';
+import 'package:countdown/event_page.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
+import 'package:morpheus/page_routes/morpheus_page_route.dart';
+
+import 'model.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        // This is the theme of your application.
+        //
+        // Try running your application with "flutter run". You'll see the
+        // application has a blue toolbar. Then, without quitting the app, try
+        // changing the primarySwatch below to Colors.green and then invoke
+        // "hot reload" (press "r" in the console where you ran "flutter run",
+        // or simply save your changes to "hot reload" in a Flutter IDE).
+        // Notice that the counter didn't reset back to zero; the application
+        // is not restarted.
+        primarySwatch: Colors.blue,
+      ),
+      home: MyHomePage(title: 'Flutter Demo Home Page'),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  MyHomePage({Key key, this.title}) : super(key: key);
+
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
+
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the build method of the State. Fields in a Widget subclass are
+  // always marked "final".
+
+  final String title;
+
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  var _model = Model();
+  var _internalIsLoading = false;
+
+  get isLoading => _internalIsLoading;
+  set isLoading(bool value) => setState(() => _internalIsLoading = value);
+
+  Timer _timer;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    isLoading = true;
+
+    FlutterStatusbarcolor.setStatusBarColor(Colors.transparent);
+    FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
+
+    _model.initialize().then((_) {
+      isLoading = false;
+      _timer = Timer.periodic(Duration(seconds: 1), (_) => setState(() {}));
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  Widget loadingIndicator = const Center(
+      child: CircularProgressIndicator(backgroundColor: Colors.cyan)
+  );
+
+  Widget eventsList() => ListView.builder(
+    itemCount: _model.size,
+    itemBuilder: (context, index) {
+      final event = _model.eventAt(index: index);
+      final key = GlobalKey();
+
+      return Dismissible(
+        direction: DismissDirection.endToStart,
+        background: Container(
+          color: Colors.red,
+          alignment: Alignment.centerRight,
+          padding: EdgeInsets.only(right: 25.0),
+          child: Icon(Icons.delete, color: Colors.white)
+        ),
+        key: key,
+        confirmDismiss: (direction) async => await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            content: Text('Are you sure you want to delete "${event.title}"?'),
+            actions: <Widget>[
+              FlatButton(
+                child: Text('Cancel', style: TextStyle(color: Colors.black)),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              FlatButton(
+                child: Text('Delete', style: TextStyle(color: Colors.red)),
+                onPressed: () {
+                  setState(() => _model.remove(event));
+                  Navigator.of(context).pop();
+                },
+              )
+            ],
+          )
+        ),
+        child: ListTile(
+          title: Text(event.title),
+          subtitle: Text(event.timeRemaining.toString()),
+          onTap: () => Navigator.push(
+            context,
+            MorpheusPageRoute(
+              parentKey: key,
+              builder: (context) => EventPage(event: event)
+            )
+          ),
+        ),
+      );
+    }
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    // This method is rerun every time setState is called, for instance as done
+    // by the _incrementCounter method above.
+    //
+    // The Flutter framework has been optimized to make rerunning build methods
+    // fast, so that you can just rebuild anything that needs updating rather
+    // than having to individually change instances of widgets.
+    return Scaffold(
+      appBar: AppBar(
+        // Here we take the value from the MyHomePage object that was created by
+        // the App.build method, and use it to set our appbar title.
+        title: Text(widget.title),
+      ),
+      body: isLoading ? loadingIndicator : eventsList(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context, MaterialPageRoute(
+            builder: (context) => AddEventPage(model: _model),
+            fullscreenDialog: true
+          )
+        ),
+        tooltip: 'Add Event',
+        child: Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
