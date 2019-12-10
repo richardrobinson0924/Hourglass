@@ -3,11 +3,23 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class Vector {
+  final num x, y, z;
+
+  Vector(this.x, this.y, this.z);
+
+  Vector.zero() : this(0, 0, 0);
+}
+
 class Model {
   List<Event> _events;
   SharedPreferences _prefs;
 
   int get size => _events?.length ?? 0;
+
+  void removeEventsWhere(bool Function(Event) test) {
+    _events.where(test).forEach((event) => remove(event));
+  }
 
   Model() : _events = null;
 
@@ -67,6 +79,8 @@ class Event implements Comparable<Event> {
   final String title;
   final DateTime start;
   final DateTime end;
+
+  bool get isOver => DateTime.now().difference(end) <= Duration(seconds: 0);
 
   NormalizedDuration get timeRemaining => NormalizedDuration(
       totalDuration: DateTime.now().difference(end).abs()
