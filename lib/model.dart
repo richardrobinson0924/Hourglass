@@ -3,14 +3,6 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Vector {
-  final num x, y, z;
-
-  Vector(this.x, this.y, this.z);
-
-  Vector.zero() : this(0, 0, 0);
-}
-
 class Model {
   List<Event> _events;
   SharedPreferences _prefs;
@@ -59,6 +51,21 @@ class Model {
   }
 
   Event eventAt({@required int index}) => _events[index];
+}
+
+class Quote {
+  final String content;
+  final String author;
+
+  Quote({this.content = '', this.author = ''});
+
+  Quote.fromJson(Map<String, dynamic> json) : this(
+    content: json['contents']['quotes'][0]['quote'],
+    author: json['contents']['quotes'][0]['author']
+  );
+
+  @override
+  String toString() => content.isEmpty ? '' : '$content -- $author';
 }
 
 /// In contrast to the [Duration] class, the fields of [NormalizedDuration] are

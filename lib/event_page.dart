@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 
@@ -6,6 +7,7 @@ import 'package:confetti/confetti.dart';
 import 'package:countdown/fillable_container.dart';
 import 'package:flutter/material.dart';
 import 'package:aeyrium_sensor/aeyrium_sensor.dart';
+import 'package:http/http.dart' as http;
 
 import 'model.dart';
 
@@ -19,9 +21,13 @@ class EventPage extends StatefulWidget {
 }
 
 class _EventPageState extends State<EventPage> {
+  static const quoteURL = 'http://quotes.rest/qod.json';
+
   final Event event;
   Timer _timer;
   double pitch = 0, roll = 0;
+
+  var quote = Quote();
 
   StreamSubscription<SensorEvent> _streamSubscriptions;
   ConfettiController _confettiController;
@@ -32,8 +38,14 @@ class _EventPageState extends State<EventPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _timer = Timer.periodic(Duration(seconds: 1), update);
 
+    http.get(quoteURL).then((response) {
+      if (response.statusCode == 200) {
+        quote = Quote.fromJson(json.decode(response.body));
+      }
+    });
+
+    _timer = Timer.periodic(Duration(seconds: 1), update);
     _confettiController = ConfettiController(duration: Duration(seconds: 5));
 
     _streamSubscriptions = AeyriumSensor.sensorEvents.listen((sensorEvent) => setState(() {
@@ -53,10 +65,7 @@ class _EventPageState extends State<EventPage> {
 
   @override
   void dispose() {
-    if (_timer.isActive) {
-      _timer.cancel();
-    }
-
+    _timer.cancel();
     _confettiController.dispose();
 
     if (_streamSubscriptions != null) {
@@ -111,7 +120,10 @@ class _EventPageState extends State<EventPage> {
                 makeTimePart(timeRemaining.days,    'd'),
                 makeTimePart(timeRemaining.hours,   'h'),
                 makeTimePart(timeRemaining.minutes, 'm'),
-                makeTimePart(timeRemaining.seconds, 's')
+                makeTimePart(timeRemaining.seconds, 's'),
+                Center(
+                  child: Text(quote.toString()),
+                )
               ],
             ),
           ),
