@@ -18,7 +18,7 @@ class AddEventPage extends StatefulWidget {
 }
 
 class _AddEventPageState extends State<AddEventPage> {
-  static var _focusNode = FocusNode();
+  var _focusNode = FocusNode();
   int currStep = 0;
   var _formKey = GlobalKey<FormState>();
 
@@ -106,7 +106,7 @@ class _AddEventPageState extends State<AddEventPage> {
         assert (this._eventTime != null);
 
         var event = Event(title: this._eventName, end: this._eventTime);
-        model.add(event);
+        model.events.add(event);
 
         Navigator.pop(context);
       }
@@ -117,13 +117,6 @@ class _AddEventPageState extends State<AddEventPage> {
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: Text('Add Event'),
-        leading: Container(),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
-          )
-        ],
       ),
       body: Container(
         child: Form(

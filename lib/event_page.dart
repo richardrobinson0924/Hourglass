@@ -7,7 +7,6 @@ import 'package:confetti/confetti.dart';
 import 'package:countdown/fillable_container.dart';
 import 'package:flutter/material.dart';
 import 'package:aeyrium_sensor/aeyrium_sensor.dart';
-import 'package:http/http.dart' as http;
 
 import 'model.dart';
 
@@ -21,13 +20,10 @@ class EventPage extends StatefulWidget {
 }
 
 class _EventPageState extends State<EventPage> {
-  static const quoteURL = 'http://quotes.rest/qod.json';
-
   final Event event;
+
   Timer _timer;
   double pitch = 0, roll = 0;
-
-  var quote = Quote();
 
   StreamSubscription<SensorEvent> _streamSubscriptions;
   ConfettiController _confettiController;
@@ -38,12 +34,6 @@ class _EventPageState extends State<EventPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-
-    http.get(quoteURL).then((response) {
-      if (response.statusCode == 200) {
-        quote = Quote.fromJson(json.decode(response.body));
-      }
-    });
 
     _timer = Timer.periodic(Duration(seconds: 1), update);
     _confettiController = ConfettiController(duration: Duration(seconds: 5));
@@ -79,6 +69,7 @@ class _EventPageState extends State<EventPage> {
     crossAxisAlignment: CrossAxisAlignment.baseline,
     textBaseline: TextBaseline.alphabetic,
     children: <Widget>[
+      Padding(padding: EdgeInsets.only(left: 15.0)),
       Text(
         event.isOver ? '00' : part.toString().padLeft(2, '0'),
         style: TextStyle(
@@ -96,6 +87,8 @@ class _EventPageState extends State<EventPage> {
   Widget build(BuildContext context) {
     var durationToSeconds = (Duration duration) => duration.abs().inSeconds.toDouble();
     var isDark = Theme.of(context).brightness == Brightness.dark;
+
+    var textTheme = Theme.of(context).textTheme;
     var timeRemaining = event.timeRemaining;
 
     return Scaffold(
@@ -113,17 +106,28 @@ class _EventPageState extends State<EventPage> {
             roll: roll,
           ),
           Container(
-            padding: EdgeInsets.only(left: 25.0, top: 100.0),
+            padding: EdgeInsets.only(left: 10.0, right: 10.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
+                Spacer(flex: 3),
                 makeTimePart(timeRemaining.days,    'd'),
                 makeTimePart(timeRemaining.hours,   'h'),
                 makeTimePart(timeRemaining.minutes, 'm'),
                 makeTimePart(timeRemaining.seconds, 's'),
+                Spacer(flex: 1),
                 Center(
-                  child: Text(quote.toString()),
-                )
+                  child: Text(
+                    Global().quote.toString(),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14.0,
+                      color: textTheme.body1.color.withOpacity(0.5),
+                      fontFamily: 'Inter-Regular'
+                    ),
+                  )
+                ),
+                Spacer(flex: 4)
               ],
             ),
           ),
@@ -144,7 +148,7 @@ class _EventPageState extends State<EventPage> {
               iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
               centerTitle: true,
               elevation: 0.0,
-              title: Text('${event.title}', style: TextStyle(color: isDark ? Colors.white : Colors.black),),
+              title: Text('${event.title}', style: TextStyle(fontFamily: 'Inter-Regular')),
               backgroundColor: Colors.transparent,
             )
           )

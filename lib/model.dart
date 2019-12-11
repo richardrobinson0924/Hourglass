@@ -3,56 +3,58 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Model {
-  List<Event> _events;
-  SharedPreferences _prefs;
+extension SynchronizableList<E> on List<E> {
+  static final makeKey = (dynamic e) => '__' + e.hashCode.toString();
 
-  int get size => _events?.length ?? 0;
+  void syncAdd(E e) {
+    this.add(e);
+    this.sort();
 
-  void removeCompletedEvents() {
-    var condition = (Event event) => event.isOver;
-
-    _events.where(condition).forEach((event) => _prefs.remove('__${event.title}'));
-    _events.removeWhere(condition);
+    SharedPreferences.getInstance().then((prefs) => prefs.setString(makeKey(e), json.encode(e)));
   }
 
-  Model() : _events = null;
+  void syncRemove(E e) {
+    this.remove(e);
 
-  /// Asynchronously initializes the model. Must be called only once, before any
-  /// other methods or functions are called
-  Future<Null> initialize() async {
-    assert (_events == null);
-    _prefs = await SharedPreferences.getInstance();
-
-    this._events = _prefs.getKeys()
-        .where((key) => key.startsWith('__'))
-        .map<Event>((key) => Event.fromJson(json.decode(_prefs.get(key))))
-        .toList();
+    SharedPreferences.getInstance().then((prefs) => prefs.remove(makeKey(e)));
   }
 
-  /// Adds [event] to the user's model's list of events
-  ///
-  /// Preconditions: [events] does not contain an [Event] whose [title] is equal to that of [event]
-  void add(Event event) {
-    assert (_events != null && _events.every((other) => other.title != event.title));
-
-    _events.add(event);
-    _prefs.setString('__${event.title}', json.encode(event));
+  void syncRemoveWhere(bool Function(E) test) {
+    SharedPreferences.getInstance().then((prefs) {
+      this.where(test).forEach((event) => prefs.remove(makeKey(event)));
+      this.removeWhere(test);
+    });
   }
-
-  /// Removes [event] from the user's model's [events] list
-  ///
-  /// Preconditions: [initialize] was previously called
-  void remove(Event event) {
-    assert (_events != null && _events.contains(event));
-
-    _events.remove(event);
-    _prefs.remove('__${event.title}');
-  }
-
-  Event eventAt({@required int index}) => _events[index];
 }
 
+class Model {
+  List<Event> events = List<Event>();
+
+  Model() {
+    SharedPreferences.getInstance().then((prefs) {
+      this.events = prefs.getKeys()
+          .where((key) => key.startsWith('__'))
+          .map((key) => Event.fromJson(json.decode(prefs.get(key))))
+          .toList();
+
+      this.events.sort();
+    });
+  }
+
+}
+
+/// Global access singleton
+class Global {
+  static final Global _instance = Global._internal();
+
+  factory Global() => _instance;
+
+  Global._internal();
+
+  var quote = Quote();
+}
+
+/// A class to aide in parsing from a JSON HTTP GET request into a formatted [toString]
 class Quote {
   final String content;
   final String author;
@@ -65,7 +67,7 @@ class Quote {
   );
 
   @override
-  String toString() => content.isEmpty ? '' : '$content -- $author';
+  String toString() => content.isEmpty ? 'Have a fantastic day.' : '"$content" — $author';
 }
 
 /// In contrast to the [Duration] class, the fields of [NormalizedDuration] are
@@ -115,8 +117,8 @@ class Event implements Comparable<Event> {
   };
 
   @override
-  int compareTo(Event other) => end.compareTo(other.end);
+  String toString() => 'Event{title=$title, start=${start.toIso8601String()}, end=${end.toIso8601String()}';
 
   @override
-  String toString() => 'Event{title=$title, start=${start.toIso8601String()}, end=${end.toIso8601String()}';
+  int compareTo(Event other) => this.end.compareTo(other.end);
 }

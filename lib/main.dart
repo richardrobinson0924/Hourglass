@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:countdown/add_event.dart';
 import 'package:countdown/event_page.dart';
@@ -7,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:morpheus/page_routes/morpheus_page_route.dart';
+import 'package:http/http.dart' as http;
+
 
 import 'model.dart';
 
@@ -43,6 +46,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  static const quoteURL = 'http://quotes.rest/qod.json';
+
   var _model = Model();
   var _internalIsLoading = false;
 
@@ -56,14 +61,20 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     isLoading = true;
 
-    _model.initialize().then((_) {
-      _model.removeCompletedEvents();
-      isLoading = false;
-
-      _timer = Timer.periodic(Duration(seconds: 1), (_) => setState(() {
-        _model.removeCompletedEvents();
-      }));
+    http.get(quoteURL).then((response) {
+      if (response.statusCode == 200) {
+        Global().quote = Quote.fromJson(json.decode(response.body));
+      } else {
+        print('Failed with status code ${response.statusCode}');
+      }
     });
+
+    _model.events.syncRemoveWhere((event) => event.isOver);
+    isLoading = false;
+
+    _timer = Timer.periodic(Duration(seconds: 1), (_) => setState(() {
+      _model.events.syncRemoveWhere((event) => event.isOver);
+    }));
   }
 
   @override
@@ -77,9 +88,9 @@ class _MyHomePageState extends State<MyHomePage> {
   );
 
   Widget eventsList() => ListView.builder(
-    itemCount: _model.size,
+    itemCount: _model.events.length,
     itemBuilder: (context, index) {
-      final event = _model.eventAt(index: index);
+      final event = _model.events[index];
       final key = GlobalKey();
 
       return Dismissible(
@@ -103,7 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
               FlatButton(
                 child: Text('Delete', style: TextStyle(color: Colors.red)),
                 onPressed: () {
-                  setState(() => _model.remove(event));
+                  setState(() => _model.events.remove(event));
                   Navigator.of(context).pop();
                 },
               )
