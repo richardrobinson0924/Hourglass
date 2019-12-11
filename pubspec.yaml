@@ -17,7 +17,7 @@ environment:
   sdk: ">=2.1.0 <3.0.0"
 
 dependencies:
-  confetti: 0.3.0
+  confetti: any
   aeyrium_sensor: ^1.0.7
   flutter_statusbarcolor: 0.2.3
   morpheus: 1.2.2+1

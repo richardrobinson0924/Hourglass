@@ -17,8 +17,11 @@ class Model {
 
   int get size => _events?.length ?? 0;
 
-  void removeEventsWhere(bool Function(Event) test) {
-    _events.where(test).forEach((event) => remove(event));
+  void removeCompletedEvents() {
+    var condition = (Event event) => event.isOver;
+
+    _events.where(condition).forEach((event) => _prefs.remove('__${event.title}'));
+    _events.removeWhere(condition);
   }
 
   Model() : _events = null;
@@ -62,17 +65,17 @@ class Model {
 /// discrete parts of the total remaining time and do not represent the entire
 /// duration each
 class NormalizedDuration {
-  final int daysRemaining, hoursRemaining, minutesRemaining, secondsRemaining;
+  final int days, hours, minutes, seconds;
 
   NormalizedDuration({@required Duration totalDuration})
-      : this.secondsRemaining = totalDuration.inSeconds.remainder(Duration.secondsPerMinute),
-        this.minutesRemaining = totalDuration.inMinutes.remainder(Duration.minutesPerHour),
-        this.hoursRemaining   = totalDuration.inHours.remainder(Duration.hoursPerDay),
-        this.daysRemaining    = totalDuration.inDays;
+      : this.seconds = totalDuration.inSeconds.remainder(Duration.secondsPerMinute),
+        this.minutes = totalDuration.inMinutes.remainder(Duration.minutesPerHour),
+        this.hours   = totalDuration.inHours.remainder(Duration.hoursPerDay),
+        this.days    = totalDuration.inDays;
 
   /// Formats the duration as a [String]; for example: `42 days 23 hrs 59 mins 00 secs`
   @override
-  String toString() => '$daysRemaining days, $hoursRemaining hrs, $minutesRemaining mins, $secondsRemaining secs';
+  String toString() => '$days days, $hours hrs, $minutes mins, $seconds secs';
 }
 
 class Event implements Comparable<Event> {
@@ -80,7 +83,7 @@ class Event implements Comparable<Event> {
   final DateTime start;
   final DateTime end;
 
-  bool get isOver => DateTime.now().difference(end) <= Duration(seconds: 0);
+  bool get isOver => end.difference(DateTime.now()) <= Duration(seconds: 0);
 
   NormalizedDuration get timeRemaining => NormalizedDuration(
       totalDuration: DateTime.now().difference(end).abs()

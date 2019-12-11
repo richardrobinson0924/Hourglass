@@ -57,9 +57,11 @@ class _MyHomePageState extends State<MyHomePage> {
     isLoading = true;
 
     _model.initialize().then((_) {
+      _model.removeCompletedEvents();
       isLoading = false;
+
       _timer = Timer.periodic(Duration(seconds: 1), (_) => setState(() {
-        _model.removeEventsWhere((event) => event.isOver);
+        _model.removeCompletedEvents();
       }));
     });
   }

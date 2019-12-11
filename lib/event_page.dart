@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:confetti/confetti.dart';
@@ -22,7 +23,7 @@ class _EventPageState extends State<EventPage> {
   Timer _timer;
   double pitch = 0, roll = 0;
 
-  StreamSubscription<dynamic> _streamSubscriptions;
+  StreamSubscription<SensorEvent> _streamSubscriptions;
   ConfettiController _confettiController;
 
   _EventPageState({Key key, this.event}) : super();
@@ -31,9 +32,7 @@ class _EventPageState extends State<EventPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) => setState(() {
-      if (event.isOver) timer.cancel();
-    }));
+    _timer = Timer.periodic(Duration(seconds: 1), update);
 
     _confettiController = ConfettiController(duration: Duration(seconds: 5));
 
@@ -41,6 +40,15 @@ class _EventPageState extends State<EventPage> {
       pitch = sensorEvent.pitch;
       roll = sensorEvent.roll;
     }));
+  }
+
+  void update(Timer timer) {
+    if (event.isOver) {
+      _confettiController.play();
+      timer.cancel();
+    }
+
+    setState(() {});
   }
 
   @override
@@ -63,7 +71,7 @@ class _EventPageState extends State<EventPage> {
     textBaseline: TextBaseline.alphabetic,
     children: <Widget>[
       Text(
-        part.toString().padLeft(2, '0'),
+        event.isOver ? '00' : part.toString().padLeft(2, '0'),
         style: TextStyle(
           fontFamily: 'Inter-ExtraBold',
           fontSize: 80.0,
@@ -75,17 +83,17 @@ class _EventPageState extends State<EventPage> {
     ],
   );
 
-  Widget get endOfEventView => Container(
-    child: ConfettiWidget(confettiController: _confettiController)
-  );
-
   @override
   Widget build(BuildContext context) {
     var durationToSeconds = (Duration duration) => duration.abs().inSeconds.toDouble();
     var isDark = Theme.of(context).brightness == Brightness.dark;
+    var timeRemaining = event.timeRemaining;
 
     return Scaffold(
-      body: event.isOver ? endOfEventView :  Stack(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _confettiController.play(),
+      ),
+      body: Stack(
         children: <Widget>[
           FillableContainer(
             backgroundColor: Theme.of(context).backgroundColor,
@@ -100,12 +108,23 @@ class _EventPageState extends State<EventPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
-                makeTimePart(event.timeRemaining.daysRemaining,    'd'),
-                makeTimePart(event.timeRemaining.hoursRemaining,   'h'),
-                makeTimePart(event.timeRemaining.minutesRemaining, 'm'),
-                makeTimePart(event.timeRemaining.secondsRemaining, 's')
+                makeTimePart(timeRemaining.days,    'd'),
+                makeTimePart(timeRemaining.hours,   'h'),
+                makeTimePart(timeRemaining.minutes, 'm'),
+                makeTimePart(timeRemaining.seconds, 's')
               ],
             ),
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirection: pi / 2,
+              emissionFrequency: 0.6,
+              minimumSize: const Size(10, 10),
+              maximumSize: const Size(30, 30),
+              numberOfParticles: 1,
+            )
           ),
           Positioned(
             top: 0.0, left: 0.0, right: 0.0,
