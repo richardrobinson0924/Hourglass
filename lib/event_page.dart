@@ -7,6 +7,7 @@ import 'package:confetti/confetti.dart';
 import 'package:countdown/fillable_container.dart';
 import 'package:flutter/material.dart';
 import 'package:aeyrium_sensor/aeyrium_sensor.dart';
+import 'package:flutter/physics.dart';
 
 import 'model.dart';
 
@@ -78,8 +79,15 @@ class _EventPageState extends State<EventPage> {
           fontFeatures: [FontFeature.tabularFigures(), FontFeature.stylisticSet(1)]
         )
       ),
-      Padding(padding: EdgeInsets.only(left: 5)),
-      Text(label, style: TextStyle(fontFamily: 'Inter-Medium', fontSize: 32.0)),
+      Padding(padding: EdgeInsets.only(left: 15)),
+      Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Inter-Medium',
+            fontSize: 26.0,
+            color: Theme.of(context).textTheme.body1.color.withOpacity(0.5)
+          )
+      ),
     ],
   );
 
@@ -90,6 +98,7 @@ class _EventPageState extends State<EventPage> {
 
     var textTheme = Theme.of(context).textTheme;
     var timeRemaining = event.timeRemaining;
+
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
@@ -111,10 +120,10 @@ class _EventPageState extends State<EventPage> {
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
                 Spacer(flex: 3),
-                makeTimePart(timeRemaining.days,    'd'),
-                makeTimePart(timeRemaining.hours,   'h'),
-                makeTimePart(timeRemaining.minutes, 'm'),
-                makeTimePart(timeRemaining.seconds, 's'),
+                makeTimePart(timeRemaining.days,    'days'),
+                makeTimePart(timeRemaining.hours,   'hours'),
+                makeTimePart(timeRemaining.minutes, 'mins'),
+                makeTimePart(timeRemaining.seconds, 'secs'),
                 Spacer(flex: 1),
                 Center(
                   child: Text(
@@ -148,7 +157,13 @@ class _EventPageState extends State<EventPage> {
               iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
               centerTitle: true,
               elevation: 0.0,
-              title: Text('${event.title}', style: TextStyle(fontFamily: 'Inter-Regular')),
+              title: Text(
+                '${event.title}',
+                style: TextStyle(
+                  fontFamily: 'Inter-Regular',
+                  color: textTheme.body1.color
+                ),
+              ),
               backgroundColor: Colors.transparent,
             )
           )
