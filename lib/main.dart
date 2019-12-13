@@ -49,17 +49,15 @@ class _MyHomePageState extends State<MyHomePage> {
   static const quoteURL = 'http://quotes.rest/qod.json';
 
   var _model = Model();
-  var _internalIsLoading = false;
-
-  get isLoading => _internalIsLoading;
-  set isLoading(bool value) => setState(() => _internalIsLoading = value);
-
+  var isLoading = true;
   Timer _timer;
 
   @override
   void initState() {
     super.initState();
-    isLoading = true;
+
+    _model.initialize().then((_) => setState(() => isLoading = false));
+    _timer = Timer.periodic(Duration(seconds: 1), (_) => setState(() {}));
 
     http.get(quoteURL).then((response) {
       if (response.statusCode == 200) {
@@ -68,13 +66,6 @@ class _MyHomePageState extends State<MyHomePage> {
         print('Failed with status code ${response.statusCode}');
       }
     });
-
-    _model.events.syncRemoveWhere((event) => event.isOver);
-    isLoading = false;
-
-    _timer = Timer.periodic(Duration(seconds: 1), (_) => setState(() {
-      _model.events.syncRemoveWhere((event) => event.isOver);
-    }));
   }
 
   @override
@@ -83,9 +74,25 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  Widget loadingIndicator = const Center(
-    child: CircularProgressIndicator(backgroundColor: Colors.cyan)
+  Widget emptyScreen() => Container(
+    alignment: Alignment.center,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        Spacer(flex: 3,),
+        Container(
+          child: Theme.of(context).brightness == Brightness.dark
+            ? Image.asset('assets/void.png', width: 250)
+            : Image.asset('assets/undraw_thoughts_e49y.png'),
+        ),
+        Padding(padding: EdgeInsets.only(top: 30.0),),
+        Text('No events. Add something you\'re looking forward to'),
+        Spacer(flex: 5,)
+      ],
+    ),
   );
+
+  Widget loadingView() => Container();
 
   Widget eventsList() => ListView.builder(
     itemCount: _model.events.length,
@@ -139,12 +146,20 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).backgroundColor,
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        elevation: 0.0,
+        backgroundColor: Theme.of(context).backgroundColor,
+        centerTitle: true,
+        title: Text(
+          'Your Events',
+          style: TextStyle(
+            fontFamily: 'Inter-Medium',
+            color: Theme.of(context).textTheme.body1.color
+          ),
+        ),
       ),
-      body: isLoading ? loadingIndicator : eventsList(),
+      body: isLoading ? loadingView() : (_model.events.isEmpty ? emptyScreen() : eventsList()),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
           context,
@@ -155,7 +170,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         tooltip: 'Add Event',
         child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }

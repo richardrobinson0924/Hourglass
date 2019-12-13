@@ -1,44 +1,24 @@
+import 'dart:collection';
 import 'dart:convert';
 
+import 'package:countdown/sync_list.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-extension SynchronizableList<E> on List<E> {
-  static final makeKey = (dynamic e) => '__' + e.hashCode.toString();
-
-  void syncAdd(E e) {
-    this.add(e);
-    this.sort();
-
-    SharedPreferences.getInstance().then((prefs) => prefs.setString(makeKey(e), json.encode(e)));
-  }
-
-  void syncRemove(E e) {
-    this.remove(e);
-
-    SharedPreferences.getInstance().then((prefs) => prefs.remove(makeKey(e)));
-  }
-
-  void syncRemoveWhere(bool Function(E) test) {
-    SharedPreferences.getInstance().then((prefs) {
-      this.where(test).forEach((event) => prefs.remove(makeKey(event)));
-      this.removeWhere(test);
-    });
-  }
-}
-
 class Model {
-  List<Event> events = List<Event>();
+  SyncList<Event> events;
 
-  Model() {
-    SharedPreferences.getInstance().then((prefs) {
-      this.events = prefs.getKeys()
-          .where((key) => key.startsWith('__'))
-          .map((key) => Event.fromJson(json.decode(prefs.get(key))))
-          .toList();
+  Model();
 
-      this.events.sort();
-    });
+  Future<Null> initialize() async {
+    assert (events == null);
+    var prefs = await SharedPreferences.getInstance();
+
+    this.events = SyncList(
+      prefsIdentifier: '__',
+      prefs: prefs,
+      decoder: (json) => Event.fromJson(json)
+    );
   }
 
 }
