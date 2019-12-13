@@ -1,26 +1,35 @@
-import 'dart:collection';
-import 'dart:convert';
 
 import 'package:countdown/sync_list.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Model {
-  SyncList<Event> events;
+  SyncList<Event> _events;
 
   Model();
 
   Future<Null> initialize() async {
-    assert (events == null);
+    assert (_events == null);
     var prefs = await SharedPreferences.getInstance();
 
-    this.events = SyncList(
+    this._events = SyncList(
       prefsIdentifier: '__',
       prefs: prefs,
       decoder: (json) => Event.fromJson(json)
     );
+
+    assert (_events != null);
   }
 
+  Iterable<Event> get events => _events;
+
+  int get numberOfEvents => _events.length;
+
+  Event eventAt(int index) => _events[index];
+
+  void addEvent(Event e) => _events.add(e);
+
+  void removeEvent(Event e) => _events.remove(e);
 }
 
 /// Global access singleton

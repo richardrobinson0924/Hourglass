@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:countdown/add_event.dart';
+import 'package:countdown/app_bar_divider.dart';
 import 'package:countdown/event_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -74,7 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  Widget emptyScreen() => Container(
+  Widget get emptyScreen => Container(
     alignment: Alignment.center,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -92,81 +94,114 @@ class _MyHomePageState extends State<MyHomePage> {
     ),
   );
 
-  Widget loadingView() => Container();
+  Widget get loadingView => Container();
 
-  Widget eventsList() => ListView.builder(
-    itemCount: _model.events.length,
-    itemBuilder: (context, index) {
-      final event = _model.events[index];
-      final key = GlobalKey();
-
-      return Dismissible(
-        direction: DismissDirection.endToStart,
-        background: Container(
-          color: Colors.red,
-          alignment: Alignment.centerRight,
-          padding: EdgeInsets.only(right: 25.0),
-          child: Icon(Icons.delete, color: Colors.white)
-        ),
-        key: key,
-        confirmDismiss: (direction) async => await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            content: Text('Are you sure you want to delete "${event.title}"?'),
-            actions: <Widget>[
-              FlatButton(
-                child: Text('Cancel', style: TextStyle(color: Colors.black)),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              FlatButton(
-                child: Text('Delete', style: TextStyle(color: Colors.red)),
-                onPressed: () {
-                  setState(() => _model.events.remove(event));
-                  Navigator.of(context).pop();
-                },
-              )
-            ],
-          )
-        ),
-        child: ListTile(
-          title: Text(event.title),
-          subtitle: Text(event.timeRemaining.toString()),
-          onTap: () => Navigator.push(
-            context,
-            MorpheusPageRoute(
-              parentKey: key,
-              builder: (context) => EventPage(event: event)
-            )
+  Dismissible makeRow({@required Key key, @required Event event}) => Dismissible(
+    direction: DismissDirection.endToStart,
+    background: Container(
+        color: Colors.red,
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: 25.0),
+        child: Icon(Icons.delete, color: Colors.white)
+    ),
+    key: key,
+    confirmDismiss: (direction) async => await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: Text('Are you sure you want to delete "${event.title}"?'),
+        actions: <Widget>[
+          FlatButton(
+            child: Text('Cancel', style: TextStyle(color: Colors.black)),
+            onPressed: () => Navigator.of(context).pop(),
           ),
-        ),
-      );
-    }
+          FlatButton(
+            child: Text('Delete', style: TextStyle(color: Colors.red)),
+            onPressed: () {
+              setState(() => _model.removeEvent(event));
+              Navigator.of(context).pop();
+            },
+          )
+        ],
+      )
+    ),
+    child: ListTile(
+      title: Text(event.title),
+      subtitle: Text(event.isOver ? 'Event Completed' : event.timeRemaining.toString()),
+      onTap: () => Navigator.push(
+        context,
+        MorpheusPageRoute(
+          parentKey: key,
+          builder: (context) => EventPage(event: event)
+        )
+      ),
+    ),
   );
+
+  bool shouldShowDivider = true;
+
+  Widget get eventsList {
+    final completedEvents = _model.events
+        .where((event) => event.isOver)
+        .map((event) => makeRow(key: GlobalKey(), event: event))
+        .toList();
+
+    final nonCompletedEvents = _model.events
+        .where((event) => !event.isOver)
+        .map((event) => makeRow(key: GlobalKey(), event: event))
+        .toList();
+
+    final expansionTile = ExpansionTile(
+      onExpansionChanged: (isExpanded) => setState(() => shouldShowDivider = !isExpanded),
+      initiallyExpanded: false,
+      title: Text(
+        'Completed Events (${completedEvents.length})',
+        style: TextStyle(
+            color: Theme.of(context).textTheme.body1.color,
+            fontFamily: 'Inter-Regular'
+        ),
+      ),
+      children: completedEvents,
+    );
+
+    return ListView(children: nonCompletedEvents.isEmpty
+      ? [expansionTile, emptyScreen]
+      : [expansionTile, shouldShowDivider ? Divider(height: 1) : Container(), ...nonCompletedEvents]
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).backgroundColor,
+      backgroundColor: isDark ? Color(0xFF121212) : Colors.white,
       appBar: AppBar(
         elevation: 0.0,
-        backgroundColor: Theme.of(context).backgroundColor,
+        backgroundColor: isDark ? Color(0xFF121212) : Colors.white,
         centerTitle: true,
+        bottom: shouldShowDivider ? AppBarDivider(color: (isDark ? Colors.white : Colors.black).withOpacity(0.25)) : null,
         title: Text(
           'Your Events',
           style: TextStyle(
-            fontFamily: 'Inter-Medium',
-            color: Theme.of(context).textTheme.body1.color
+              fontFamily: 'Inter-Regular',
+              color: Theme.of(context).textTheme.body1.color
           ),
         ),
+        actions: <Widget>[
+          IconButton(
+              icon: Icon(Icons.more_vert),
+              onPressed: null
+          )
+        ],
       ),
-      body: isLoading ? loadingView() : (_model.events.isEmpty ? emptyScreen() : eventsList()),
+      body: isLoading ? loadingView : eventsList,
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AddEventPage(model: _model),
-            fullscreenDialog: true
-          )
+            context,
+            MaterialPageRoute(
+                builder: (context) => AddEventPage(model: _model),
+                fullscreenDialog: true
+            )
         ),
         tooltip: 'Add Event',
         child: Icon(Icons.add),
@@ -174,3 +209,4 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+

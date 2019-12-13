@@ -106,7 +106,7 @@ class _AddEventPageState extends State<AddEventPage> {
         assert (this._eventTime != null);
 
         var event = Event(title: this._eventName, end: this._eventTime);
-        model.events.add(event);
+        model.addEvent(event);
 
         Navigator.pop(context);
       }

@@ -4,6 +4,13 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+extension SplittableList<Element> on Iterable {
+  Iterable<Iterable<Element>> split(bool Function(Element) test) => [
+    this.where(test),
+    this.where((e) => !test(e))
+  ];
+}
+
 class SyncList<Element> extends ListBase<Element> {
   String _createKey(Object o) => prefsIdentifier + o.hashCode.toString();
 
@@ -26,6 +33,7 @@ class SyncList<Element> extends ListBase<Element> {
   @override
   int get length => _innerList.length;
 
+  @override
   set length(int length) => _innerList.length = length;
 
   @override
@@ -39,12 +47,12 @@ class SyncList<Element> extends ListBase<Element> {
     _innerList.add(element);
     _innerList.sort();
 
-    SharedPreferences.getInstance().then((prefs) => prefs.setString(_createKey(element), json.encode(element)));
+    prefs.setString(_createKey(element), json.encode(element));
   }
 
   @override
   bool remove(Object element) {
-    SharedPreferences.getInstance().then((prefs) => prefs.remove(_createKey(element)));
+    prefs.remove(_createKey(element));
     return _innerList.remove(element);
   }
 
@@ -53,21 +61,19 @@ class SyncList<Element> extends ListBase<Element> {
     _innerList.addAll(iterable);
     _innerList.sort();
 
-    SharedPreferences.getInstance().then((prefs) => iterable.forEach(
-      (e) => prefs.setString(_createKey(e), json.encode(e)))
-    );
+    iterable.forEach((e) => prefs.setString(_createKey(e), json.encode(e)));
   }
 
   @override
   Element removeAt(int index) {
-    remove(_innerList[index]);
+    var element = _innerList[index];
+    remove(element);
+    return element;
   }
 
   @override
-  void removeWhere(bool Function(Element element) test) {
-    SharedPreferences.getInstance().then((prefs) {
-      _innerList.where(test).forEach((e) => prefs.remove(_createKey(e)));
-      _innerList.removeWhere(test);
-    });
+  void removeWhere(bool Function(Element) test) {
+    _innerList.where(test).forEach((e) => prefs.remove(_createKey(e)));
+    _innerList.removeWhere(test);
   }
 }
