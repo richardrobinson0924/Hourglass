@@ -55,8 +55,19 @@ class Quote {
     author: json['contents']['quotes'][0]['author']
   );
 
+  String get _greeting {
+    var hour = DateTime.now().hour;
+    print(hour.toString());
+
+    if (hour >=  5 && hour < 12) return 'Have an amazing morning 😀';
+    if (hour >= 12 && hour < 19) return 'Have a nice afternoon 🥳';
+    if (hour >= 19 || hour <  5) return 'Have a fantastic night 🥱';
+
+    throw Exception('Did not satisfy any condition');
+  }
+
   @override
-  String toString() => content.isEmpty ? 'Have a fantastic day.' : '"$content" — $author';
+  String toString() => content.isEmpty ? _greeting : '"$content" — $author';
 }
 
 /// In contrast to the [Duration] class, the fields of [NormalizedDuration] are
@@ -64,6 +75,8 @@ class Quote {
 /// duration each
 class NormalizedDuration {
   final int days, hours, minutes, seconds;
+
+  NormalizedDuration.custom([this.days = 0, this.hours = 0, this.minutes = 0, this.seconds = 0]);
 
   NormalizedDuration({@required Duration totalDuration})
       : this.seconds = totalDuration.inSeconds.remainder(Duration.secondsPerMinute),
@@ -77,9 +90,10 @@ class NormalizedDuration {
 }
 
 class Event implements Comparable<Event> {
-  final String title;
+  final String   title;
   final DateTime start;
   final DateTime end;
+  final Color    color;
 
   bool get isOver => end.difference(DateTime.now()) <= Duration(seconds: 0);
 
@@ -87,26 +101,29 @@ class Event implements Comparable<Event> {
       totalDuration: DateTime.now().difference(end).abs()
   );
 
-  Event({@required this.title, @required this.end}) : start = DateTime.now() {
-    assert (end.isAfter(start));
-    assert (title.trim().length > 0);
-  }
+  Event({@required this.title, @required this.end, @required this.color})
+      : start = DateTime.now(),
+        assert (end != null),
+        assert (color != null),
+        assert (end.isAfter(DateTime.now()));
 
   /// Deserialize an [Event] instance from a JSON map
   Event.fromJson(Map<String, dynamic> json)
       : title = json['title'],
+        color = Color(json['color'] as int),
         start = DateTime.fromMillisecondsSinceEpoch(json['start'] as int),
         end   = DateTime.fromMillisecondsSinceEpoch(json['end'] as int);
 
   /// Serialize this instance to a JSON map
   Map<String, dynamic> toJson() => {
     'title' : title,
+    'color' : color.value,
     'start' : start.millisecondsSinceEpoch,
     'end'   : end.millisecondsSinceEpoch
   };
 
   @override
-  String toString() => 'Event{title=$title, start=${start.toIso8601String()}, end=${end.toIso8601String()}';
+  String toString() => toJson().toString();
 
   @override
   int compareTo(Event other) => this.end.compareTo(other.end);

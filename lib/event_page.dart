@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:confetti/confetti.dart';
 import 'package:countdown/fillable_container.dart';
+import 'package:countdown/fluid_view.dart';
 import 'package:flutter/material.dart';
 import 'package:aeyrium_sensor/aeyrium_sensor.dart';
 import 'package:flutter/physics.dart';
@@ -93,12 +94,10 @@ class _EventPageState extends State<EventPage> {
 
   @override
   Widget build(BuildContext context) {
-    var durationToSeconds = (Duration duration) => duration.abs().inSeconds.toDouble();
     var isDark = Theme.of(context).brightness == Brightness.dark;
 
     var textTheme = Theme.of(context).textTheme;
     var timeRemaining = event.timeRemaining;
-
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
@@ -106,13 +105,17 @@ class _EventPageState extends State<EventPage> {
       ),
       body: Stack(
         children: <Widget>[
-          FillableContainer(
-            backgroundColor: Theme.of(context).backgroundColor,
-            progressColor: Colors.blue.withOpacity(0.1),
-            size: durationToSeconds(event.end.difference(event.start)),
-            progress: durationToSeconds(DateTime.now().difference(event.start)),
-            pitch: pitch,
-            roll: roll,
+          Container(color: Theme.of(context).backgroundColor),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: FluidView(
+                angle: roll,
+                color: event.color,
+                progress: Ratio(
+                    part: DateTime.now().difference(event.start),
+                    total: event.end.difference(event.start)
+                ).map((t) => t.abs().inSeconds.toDouble())
+            ),
           ),
           Container(
             padding: EdgeInsets.only(left: 10.0, right: 10.0),

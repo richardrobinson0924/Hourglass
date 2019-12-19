@@ -54,6 +54,8 @@ class _MyHomePageState extends State<MyHomePage> {
   var isLoading = true;
   Timer _timer;
 
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
+
   @override
   void initState() {
     super.initState();
@@ -76,20 +78,19 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  Widget get emptyScreen => Container(
-    alignment: Alignment.center,
+  Widget get emptyScreen => Expanded(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        Spacer(flex: 3,),
-        Container(
+        Spacer(flex: 1),
+        Center(
           child: Theme.of(context).brightness == Brightness.dark
             ? Image.asset('assets/void.png', width: 250)
             : Image.asset('assets/undraw_thoughts_e49y.png'),
         ),
         Padding(padding: EdgeInsets.only(top: 30.0),),
         Text('No events. Add something you\'re looking forward to'),
-        Spacer(flex: 5,)
+        Spacer(flex: 3,)
       ],
     ),
   );
@@ -138,6 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
   );
 
   bool shouldShowDivider = true;
+  bool shouldShowIllustration = true;
 
   Widget get eventsList {
     final completedEvents = _model.events
@@ -151,7 +153,10 @@ class _MyHomePageState extends State<MyHomePage> {
         .toList();
 
     final expansionTile = ExpansionTile(
-      onExpansionChanged: (isExpanded) => setState(() => shouldShowDivider = !isExpanded),
+      onExpansionChanged: (isExpanded) => setState(() {
+        shouldShowDivider = !isExpanded;
+        shouldShowIllustration = !isExpanded;
+      }),
       initiallyExpanded: false,
       title: Text(
         'Completed Events (${completedEvents.length})',
@@ -163,16 +168,26 @@ class _MyHomePageState extends State<MyHomePage> {
       children: completedEvents,
     );
 
-    return ListView(children: nonCompletedEvents.isEmpty
-      ? [expansionTile, emptyScreen]
-      : [expansionTile, shouldShowDivider ? Divider(height: 1) : Container(), ...nonCompletedEvents]
-    );
+    final possibleDivider = shouldShowDivider
+        ? Divider(height: 0, color: (isDark ? Colors.white : Colors.black).withOpacity(0.4))
+        : Container();
+
+    return nonCompletedEvents.isEmpty
+      ? Column(children: [
+          expansionTile,
+          possibleDivider,
+          shouldShowIllustration || completedEvents.isEmpty ? emptyScreen : Container()
+        ])
+      : ListView(children: [
+          expansionTile,
+          possibleDivider,
+          ...nonCompletedEvents
+        ]);
+
   }
 
   @override
   Widget build(BuildContext context) {
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       backgroundColor: isDark ? Color(0xFF121212) : Colors.white,
       appBar: AppBar(
