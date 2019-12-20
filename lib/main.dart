@@ -5,12 +5,15 @@ import 'dart:math';
 import 'package:countdown/add_event.dart';
 import 'package:countdown/app_bar_divider.dart';
 import 'package:countdown/event_page.dart';
+import 'package:countdown/settings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:morpheus/page_routes/morpheus_page_route.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 import 'model.dart';
@@ -60,6 +63,18 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
+    final initSettings = InitializationSettings(
+      AndroidInitializationSettings('app_icon'),
+      null
+    );
+
+    Global().notificationsManager.initialize(initSettings, onSelectNotification: (payload) async => Navigator.push(
+        context,
+        MorpheusPageRoute(builder: (context) => EventPage(
+            event: Event.fromJson(json.decode(payload))
+        ))
+    ));
+
     _model.initialize().then((_) => setState(() => isLoading = false));
     _timer = Timer.periodic(Duration(seconds: 1), (_) => setState(() {}));
 
@@ -84,7 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
       children: <Widget>[
         Spacer(flex: 1),
         Center(
-          child: Theme.of(context).brightness == Brightness.dark
+          child: isDark
             ? Image.asset('assets/void.png', width: 250)
             : Image.asset('assets/undraw_thoughts_e49y.png'),
         ),
@@ -203,9 +218,80 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
         actions: <Widget>[
-          IconButton(
-              icon: Icon(Icons.more_vert),
-              onPressed: null
+          PopupMenuButton<int>(
+            icon: Icon(Icons.more_vert),
+//            onSelected: (_) => Navigator.push(
+//              context,
+//              MaterialPageRoute(
+//                  builder: (context) => SettingsPage(configuration: _model.configuration)
+//              )
+//            ),
+            onSelected: (_) => showModalBottomSheet<void>(
+              shape: RoundedRectangleBorder(
+                side: BorderSide(),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(10.0),
+                  topRight: Radius.circular(10.0)
+                )
+              ),
+              context: context,
+              builder: (context) => StatefulBuilder(
+                builder: (context, setState) => Container(
+                  height: 260.0,
+                  child: Column(
+                    children: <Widget>[
+                      Padding(padding: EdgeInsets.only(top: 20.0),),
+                      Center(child: Text(
+                        'Settings',
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.title.color.withOpacity(0.75),
+                          fontSize: 18.0,
+                        ),
+                      )),
+                      Padding(padding: EdgeInsets.only(top: 10.0),),
+                      SwitchListTile(
+                        title: Text('Enable Notifications'),
+                        value: _model.configuration.shouldShowNotifications,
+                        onChanged: (value) => setState(() => _model.configuration.shouldShowNotifications = value)
+                      ),
+                      ListTile(
+                        title: Text('Color Theme'),
+                        trailing: DropdownButton<AppTheme>(
+                          underline: Container(),
+                          onChanged: (theme) {
+                            this.setState(() => _model.configuration.appTheme = theme);
+                            setState(() => _model.configuration.appTheme = theme);
+                          },
+                          value: _model.configuration.appTheme,
+                          items: AppTheme.values.map((theme) => DropdownMenuItem<AppTheme>(
+                            child: Text(theme.name),
+                            value: theme,
+                          )).toList()
+                        ),
+                      ),
+                      ListTile(
+                        title: Text('Text Font'),
+                        trailing: DropdownButton<Font>(
+                          underline: Container(),
+                          onChanged: (font) {
+                            this.setState(() => _model.configuration.font = font);
+                            setState(() => _model.configuration.font = font);
+                          },
+                          value: _model.configuration.font,
+                          items: Font.values.map((font) => DropdownMenuItem<Font>(
+                            child: Text(font.name),
+                            value: font,
+                          )).toList()
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              )
+            ),
+            itemBuilder: (context) => <PopupMenuEntry<int>>[
+              const PopupMenuItem(value: 0, child: Text('Settings'))
+            ],
           )
         ],
       ),

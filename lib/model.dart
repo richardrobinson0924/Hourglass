@@ -1,16 +1,23 @@
 
+import 'dart:convert';
+
+import 'package:countdown/settings.dart';
 import 'package:countdown/sync_list.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Model {
   SyncList<Event> _events;
+  Configuration _configuration;
 
   Model();
 
   Future<Null> initialize() async {
     assert (_events == null);
     var prefs = await SharedPreferences.getInstance();
+
+    this._configuration = Configuration(prefs);
 
     this._events = SyncList(
       prefsIdentifier: '__',
@@ -21,26 +28,59 @@ class Model {
     assert (_events != null);
   }
 
-  Iterable<Event> get events => _events;
+  Configuration get configuration  {
+    assert (_configuration != null);
+    return _configuration;
+  }
 
-  int get numberOfEvents => _events.length;
+  Iterable<Event> get events => _events ?? Iterable.empty();
+
+  int get numberOfEvents => _events?.length ?? 0;
 
   Event eventAt(int index) => _events[index];
 
-  void addEvent(Event e) => _events.add(e);
+  void addEvent(Event e) {
+    assert (_events != null);
 
-  void removeEvent(Event e) => _events.remove(e);
+    _events.add(e);
+
+    Global().notificationsManager.schedule(
+      e.hashCode,
+      'Countdown to ${e.title} Over',
+      'The countdown to ${e.title} is now complete!',
+      e.end,
+      Global().notificationDetails,
+      payload: json.encode(e.toJson())
+    );
+  }
+
+  void removeEvent(Event e) {
+    _events.remove(e);
+
+    Global().notificationsManager.cancel(e.hashCode);
+  }
 }
 
 /// Global access singleton
 class Global {
   static final Global _instance = Global._internal();
-
   factory Global() => _instance;
-
   Global._internal();
 
   var quote = Quote();
+
+  final notificationsManager = FlutterLocalNotificationsPlugin();
+
+  final notificationDetails = NotificationDetails(
+    AndroidNotificationDetails(
+      'com.richardrobinson.countdown',
+      'Hourglass',
+      'The countdown app',
+      importance: Importance.Max,
+      priority: Priority.High,
+    ),
+    null
+  );
 }
 
 /// A class to aide in parsing from a JSON HTTP GET request into a formatted [toString]
