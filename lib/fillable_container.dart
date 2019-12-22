@@ -7,7 +7,7 @@ class CircleButton extends InkResponse {
     Key key,
     @required Color color,
     @required double radius,
-    @required GestureTapCallback onTap
+    @required void Function() onTap
   }) : super(
       key: key,
       child: Circle(color: color, radius: radius),

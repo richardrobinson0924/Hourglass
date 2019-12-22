@@ -68,18 +68,16 @@ flutter:
   # https://flutter.dev/assets-and-images/#from-packages
 
   fonts:
-    - family: Inter-Bold
-      fonts:
-        - asset: assets/Inter-Bold.otf
-    - family: Inter-ExtraBold
+    - family: Inter
       fonts:
         - asset: assets/Inter-ExtraBold.otf
-    - family: Inter-Medium
-      fonts:
-        - asset: assets/Inter-Medium.otf
-    - family: Inter-Regular
-      fonts:
+          weight: 700
         - asset: assets/Inter-Regular.otf
+    - family: OpenDyslexic
+      fonts:
+        - asset: assets/OpenDyslexic3-Bold.ttf
+          weight: 700
+        - asset: assets/OpenDyslexic3-Regular.ttf
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a

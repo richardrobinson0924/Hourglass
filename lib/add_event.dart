@@ -31,12 +31,14 @@ class _AddEventPageState extends State<AddEventPage> {
   final Model model;
 
   final manager = Manager<MyStepState>(
-      steps: Iterable<MyStepState>.generate(3, (_) => MyStepState())
+    steps: Iterable<MyStepState>.generate(3, (_) => MyStepState())
   );
 
   bool get isDark => Theme.of(context).brightness == Brightness.dark;
 
-  _AddEventPageState({Key key, this.model}) : super();
+  _AddEventPageState({Key key, this.model})
+      : assert (model != null),
+        super();
 
   @override
   void initState() {
@@ -168,6 +170,7 @@ class _AddEventPageState extends State<AddEventPage> {
           color: this.eventColor
         ));
 
+        Global.saveModel(model);
         Navigator.pop(context);
       };
 

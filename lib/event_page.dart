@@ -14,23 +14,28 @@ import 'model.dart';
 
 class EventPage extends StatefulWidget {
   final Event event;
+  final Configuration configuration;
 
-  EventPage({Key key, this.event}) : super(key: key);
+  EventPage({Key key, this.event, this.configuration}) : super(key: key);
 
   @override
-  _EventPageState createState() => _EventPageState(event: event);
+  _EventPageState createState() => _EventPageState(
+      event: event,
+      configuration: configuration
+  );
 }
 
 class _EventPageState extends State<EventPage> {
   final Event event;
+  final Configuration configuration;
 
   Timer _timer;
-  double pitch = 0, roll = 0;
+  double roll = 0.0;
 
   StreamSubscription<SensorEvent> _streamSubscriptions;
   ConfettiController _confettiController;
 
-  _EventPageState({Key key, this.event}) : super();
+  _EventPageState({Key key, this.event, this.configuration}) : super();
 
   @override
   void initState() {
@@ -40,10 +45,9 @@ class _EventPageState extends State<EventPage> {
     _timer = Timer.periodic(Duration(seconds: 1), update);
     _confettiController = ConfettiController(duration: Duration(seconds: 5));
 
-    _streamSubscriptions = AeyriumSensor.sensorEvents.listen((sensorEvent) => setState(() {
-      pitch = sensorEvent.pitch;
-      roll = sensorEvent.roll;
-    }));
+    _streamSubscriptions = AeyriumSensor.sensorEvents.listen((sensorEvent) =>
+        setState(() => roll = sensorEvent.roll)
+    );
   }
 
   void update(Timer timer) {
@@ -75,8 +79,9 @@ class _EventPageState extends State<EventPage> {
       Text(
         event.isOver ? '00' : part.toString().padLeft(2, '0'),
         style: TextStyle(
-          fontFamily: 'Inter-ExtraBold',
-          fontSize: 80.0,
+          fontFamily: configuration.fontFamily,
+          fontWeight: FontWeight.w700,
+          fontSize: configuration.shouldUseAltFont ? 60.0 : 80.0,
           fontFeatures: [FontFeature.tabularFigures(), FontFeature.stylisticSet(1)]
         )
       ),
@@ -84,7 +89,7 @@ class _EventPageState extends State<EventPage> {
       Text(
           label,
           style: TextStyle(
-            fontFamily: 'Inter-Medium',
+            fontFamily: configuration.fontFamily,
             fontSize: 26.0,
             color: Theme.of(context).textTheme.body1.color.withOpacity(0.5)
           )
@@ -100,12 +105,11 @@ class _EventPageState extends State<EventPage> {
     var timeRemaining = event.timeRemaining;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _confettiController.play(),
-      ),
       body: Stack(
         children: <Widget>[
+          // background
           Container(color: Theme.of(context).backgroundColor),
+          // fluid
           Align(
             alignment: Alignment.bottomCenter,
             child: FluidView(
@@ -114,9 +118,10 @@ class _EventPageState extends State<EventPage> {
                 progress: Ratio(
                     part: DateTime.now().difference(event.start),
                     total: event.end.difference(event.start)
-                ).map((t) => t.abs().inSeconds.toDouble())
+                ).map((t) => max(t.inSeconds.toDouble(), 0.0))
             ),
           ),
+          // text
           Container(
             padding: EdgeInsets.only(left: 10.0, right: 10.0),
             child: Column(
@@ -135,7 +140,7 @@ class _EventPageState extends State<EventPage> {
                     style: TextStyle(
                       fontSize: 14.0,
                       color: textTheme.body1.color.withOpacity(0.5),
-                      fontFamily: 'Inter-Regular'
+                      fontFamily: configuration.fontFamily
                     ),
                   )
                 ),
@@ -143,6 +148,7 @@ class _EventPageState extends State<EventPage> {
               ],
             ),
           ),
+          // confetti
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
@@ -154,6 +160,7 @@ class _EventPageState extends State<EventPage> {
               numberOfParticles: 1,
             )
           ),
+          // app bar
           Positioned(
             top: 0.0, left: 0.0, right: 0.0,
             child: AppBar(
@@ -163,7 +170,7 @@ class _EventPageState extends State<EventPage> {
               title: Text(
                 '${event.title}',
                 style: TextStyle(
-                  fontFamily: 'Inter-Regular',
+                  fontFamily: configuration.fontFamily,
                   color: textTheme.body1.color
                 ),
               ),
