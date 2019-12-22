@@ -15,11 +15,8 @@ class Ratio<Quantity extends Comparable<Quantity>> {
         assert(part.compareTo(total) <= 0);
 
   /// Maps this Ratio to a Ratio of a possibly different type
-  Ratio<R> map<R extends Comparable<R>>(R Function(Quantity) mapping) => Ratio(
-      part: mapping(part),
-      total: mapping(total)
-  );
-
+  Ratio<R> map<R extends Comparable<R>>(R Function(Quantity) mapping) =>
+      Ratio(part: mapping(part), total: mapping(total));
 
   @override
   String toString() => 'Ratio{${part.toString()} : ${total.toString()}}';
@@ -74,11 +71,9 @@ class _FluidViewPainter extends CustomPainter {
   final Ratio<num> progress;
   final Color color;
 
-  _FluidViewPainter({
-    @required this.angle,
-    @required this.progress,
-    @required this.color
-  }) : assert(color != null && progress != null);
+  _FluidViewPainter(
+      {@required this.angle, @required this.progress, @required this.color})
+      : assert(color != null && progress != null);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -108,16 +103,16 @@ class FluidView extends StatelessWidget {
   final Color color;
   final Ratio<num> progress;
 
-  const FluidView({
-    Key key,
-    @required this.angle,
-    @required this.color,
-    @required this.progress
-  }) : super(key: key);
+  const FluidView(
+      {Key key,
+      @required this.angle,
+      @required this.color,
+      @required this.progress})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) => CustomPaint(
       size: MediaQuery.of(context).size,
-      painter: _FluidViewPainter(angle: angle, progress: progress, color: color)
-  );
+      painter:
+          _FluidViewPainter(angle: angle, progress: progress, color: color));
 }

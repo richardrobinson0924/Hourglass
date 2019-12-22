@@ -1,4 +1,3 @@
-
 import 'package:countdown/state_manager.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:flutter/cupertino.dart';
@@ -31,13 +30,12 @@ class _AddEventPageState extends State<AddEventPage> {
   final Model model;
 
   final manager = Manager<MyStepState>(
-    steps: Iterable<MyStepState>.generate(3, (_) => MyStepState())
-  );
+      steps: Iterable<MyStepState>.generate(3, (_) => MyStepState()));
 
   bool get isDark => Theme.of(context).brightness == Brightness.dark;
 
   _AddEventPageState({Key key, this.model})
-      : assert (model != null),
+      : assert(model != null),
         super();
 
   @override
@@ -58,56 +56,51 @@ class _AddEventPageState extends State<AddEventPage> {
   @override
   Widget build(BuildContext context) {
     final eventNameStep = Step(
-      title: const Text('Event Title'),
-      isActive: manager[titleIndex].isActive,
-      state: manager[titleIndex].state,
-      content: TextFormField(
-        focusNode: _focusNode,
-        keyboardType: TextInputType.text,
-        onChanged: (value) => setState(() => _eventName = value),
-        onSaved: (value) => _eventName = value,
-        decoration: InputDecoration(
-          labelText: 'Label text',
-          hintText: 'Hint text',
-          labelStyle: TextStyle(decorationStyle: TextDecorationStyle.solid),
-        ),
-      )
-    );
+        title: const Text('Event Title'),
+        isActive: manager[titleIndex].isActive,
+        state: manager[titleIndex].state,
+        content: TextFormField(
+          focusNode: _focusNode,
+          keyboardType: TextInputType.text,
+          onChanged: (value) => setState(() => _eventName = value),
+          onSaved: (value) => _eventName = value,
+          decoration: InputDecoration(
+            labelText: 'Label text',
+            hintText: 'Hint text',
+            labelStyle: TextStyle(decorationStyle: TextDecorationStyle.solid),
+          ),
+        ));
 
     final format = DateFormat('MMMM d, yyyy \'at\' h:mm a');
     final now = DateTime.now();
 
     final eventTimeStep = Step(
-      title: const Text('Event Time'),
-      isActive: manager[timeIndex].isActive,
-      state: manager[timeIndex].state,
-      content: DateTimeField(
-        readOnly: true,
-        initialValue: DateTime(now.year, now.month, now.day, now.hour + 1),
-        format: format,
-        onShowPicker: (context, value) async {
-          final date = await showDatePicker(
-              context: context,
-              initialDate: value,
-              firstDate: now.add(Duration(minutes: 1)),
-              lastDate: DateTime(2050)
-          );
-
-          if (date != null) {
-            final time = await showTimePicker(
+        title: const Text('Event Time'),
+        isActive: manager[timeIndex].isActive,
+        state: manager[timeIndex].state,
+        content: DateTimeField(
+          readOnly: true,
+          initialValue: DateTime(now.year, now.month, now.day, now.hour + 1),
+          format: format,
+          onShowPicker: (context, value) async {
+            final date = await showDatePicker(
                 context: context,
-                initialTime: TimeOfDay.fromDateTime(value)
-            );
+                initialDate: value,
+                firstDate: now.add(Duration(minutes: 1)),
+                lastDate: DateTime(2050));
 
-            return DateTimeField.combine(date, time);
-          } else {
-            return value;
-          }
-        },
-        onChanged: (value) => _eventTime = value,
-        onSaved: (value) => _eventTime = value,
-      )
-    );
+            if (date != null) {
+              final time = await showTimePicker(
+                  context: context, initialTime: TimeOfDay.fromDateTime(value));
+
+              return DateTimeField.combine(date, time);
+            } else {
+              return value;
+            }
+          },
+          onChanged: (value) => _eventTime = value,
+          onSaved: (value) => _eventTime = value,
+        ));
 
     final colors = [
       Colors.blue,
@@ -123,11 +116,12 @@ class _AddEventPageState extends State<AddEventPage> {
       state: manager[colorIndex].state,
       content: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: colors.map((color) => CircleButton(
-          color: color,
-          radius: 18.0,
-          onTap: () => setState(() => eventColor = color))
-        ).toList(),
+        children: colors
+            .map((color) => CircleButton(
+                color: color,
+                radius: 18.0,
+                onTap: () => setState(() => eventColor = color)))
+            .toList(),
       ),
     );
 
@@ -140,17 +134,17 @@ class _AddEventPageState extends State<AddEventPage> {
       ),
       body: Container(
         child: Form(
-          key: _formKey,
-          child: ColorStepper(
-            accentColor: eventColor,
-            steps: steps,
-            type: StepperType.vertical,
-            currentStep: manager.currentIndex,
-            onStepTapped: (step) => setState(() => manager.currentIndex = step),
-            onStepContinue: _onContinueFunction(),
-            onStepCancel: () => Navigator.pop(context),
-          )
-        ),
+            key: _formKey,
+            child: ColorStepper(
+              accentColor: eventColor,
+              steps: steps,
+              type: StepperType.vertical,
+              currentStep: manager.currentIndex,
+              onStepTapped: (step) =>
+                  setState(() => manager.currentIndex = step),
+              onStepContinue: _onContinueFunction(),
+              onStepCancel: () => Navigator.pop(context),
+            )),
       ),
     );
   }
@@ -159,24 +153,26 @@ class _AddEventPageState extends State<AddEventPage> {
     var goToNextPage = () => setState(() => manager.currentIndex += 1);
 
     switch (manager.currentIndex) {
-      case titleIndex: return _eventName.trim().isEmpty ? null : goToNextPage;
+      case titleIndex:
+        return _eventName.trim().isEmpty ? null : goToNextPage;
 
-      case timeIndex: return goToNextPage;
+      case timeIndex:
+        return goToNextPage;
 
-      case colorIndex: return () {
-        model.addEvent(Event(
-          title: this._eventName,
-          end:   this._eventTime ,
-          color: this.eventColor
-        ));
+      case colorIndex:
+        return () {
+          model.addEvent(Event(
+              title: this._eventName,
+              end: this._eventTime,
+              color: this.eventColor));
 
-        Global.saveModel(model);
-        Navigator.pop(context);
-      };
+          Global.saveModel(model);
+          Navigator.pop(context);
+        };
 
-      default: throw Exception();
+      default:
+        throw Exception();
     }
-
   }
 }
 
@@ -203,7 +199,6 @@ class MyStepState implements MyStep {
     isActive = false;
     state = StepState.disabled;
   }
-
 }
 
 typedef Callable = void Function();

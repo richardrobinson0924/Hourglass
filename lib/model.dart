@@ -9,21 +9,21 @@ class Model {
   final Configuration configuration;
 
   Model.fromJson(Map<String, dynamic> map)
-    : configuration = map == null
-          ? Configuration()
-          : Configuration.fromJson(map['configuration']),
-      events = map == null
-          ? []
-          : (map['events'] as List<dynamic>)
-              .map<Event>((rawJSON) => Event.fromJson(rawJSON))
-              .toList(); /* (map['events'] as List<dynamic>).map<Event>((e) => Event.fromJson(json.decode(e))).toList(); */
+      : configuration = map == null
+            ? Configuration()
+            : Configuration.fromJson(map['configuration']),
+        events = map == null
+            ? []
+            : (map['events'] as List<dynamic>)
+                .map<Event>((rawJSON) => Event.fromJson(rawJSON))
+                .toList(); /* (map['events'] as List<dynamic>).map<Event>((e) => Event.fromJson(json.decode(e))).toList(); */
 
   Map<String, dynamic> toJson() => {
-    'configuration': configuration.toJson(),
-    'events': events
-        .map<dynamic>((event) => event.toJson())
-        .toList() /* events.map<String>((event) => json.encode(event.toJson())).toList() */
-  };
+        'configuration': configuration.toJson(),
+        'events': events
+            .map<dynamic>((event) => event.toJson())
+            .toList() /* events.map<String>((event) => json.encode(event.toJson())).toList() */
+      };
 
   int get numberOfEvents => events?.length ?? 0;
 

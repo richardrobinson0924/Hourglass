@@ -28,10 +28,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         backgroundColor: Colors.white,
       ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        backgroundColor: Colors.black
-      ),
+      darkTheme:
+          ThemeData(brightness: Brightness.dark, backgroundColor: Colors.black),
       home: MyHomePage(),
     );
   }
@@ -60,19 +58,14 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     super.initState();
 
     final initSettings = InitializationSettings(
-        AndroidInitializationSettings('app_icon'),
-        IOSInitializationSettings()
-    );
+        AndroidInitializationSettings('app_icon'), IOSInitializationSettings());
 
-    Global().notificationsManager.initialize(
-      initSettings,
-      onSelectNotification: (payload) async => Navigator.push(
-        context,
-        MorpheusPageRoute(
-          builder: (context) => EventPage(event: Event.fromJson(json.decode(payload)))
-        )
-      )
-    );
+    Global().notificationsManager.initialize(initSettings,
+        onSelectNotification: (payload) async => Navigator.push(
+            context,
+            MorpheusPageRoute(
+                builder: (context) =>
+                    EventPage(event: Event.fromJson(json.decode(payload))))));
 
     SharedPreferences.getInstance().then((prefs) {
       var raw = prefs.getString('hourglassModel');
@@ -80,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         _model = Model.fromJson(raw == null ? null : json.decode(raw));
         isLoading = false;
 
-        assert (_model != null);
+        assert(_model != null);
       });
 
       print(raw);
@@ -113,76 +106,77 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   }
 
   Widget get emptyScreen => Expanded(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: <Widget>[
-        Spacer(flex: 1),
-        Center(child: isDark
-              ? Image.asset('assets/void.png', width: 250)
-              : Image.asset('assets/undraw_thoughts_e49y.png'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Spacer(flex: 1),
+            Center(
+              child: isDark
+                  ? Image.asset('assets/void.png', width: 250)
+                  : Image.asset('assets/undraw_thoughts_e49y.png'),
+            ),
+            Padding(padding: EdgeInsets.only(top: 30.0)),
+            Text('No events. Add something you\'re looking forward to'),
+            Spacer(flex: 3)
+          ],
         ),
-        Padding(padding: EdgeInsets.only(top: 30.0)),
-        Text('No events. Add something you\'re looking forward to'),
-        Spacer(flex: 3)
-      ],
-    ),
-  );
+      );
 
   Widget get loadingView => Container();
 
-  Dismissible makeRow({@required Key key, @required Event event}) => Dismissible(
-    direction: DismissDirection.endToStart,
-    background: Container(
-      color: Colors.red,
-      alignment: Alignment.centerRight,
-      padding: EdgeInsets.only(right: 25.0),
-      child: Icon(Icons.delete, color: Colors.white)
-    ),
-    key: key,
-    confirmDismiss: (direction) async => await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        content: Text('Are you sure you want to delete "${event.title}"?'),
-        actions: <Widget>[
-          FlatButton(
-            child: Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(),
+  Dismissible makeRow({@required Key key, @required Event event}) =>
+      Dismissible(
+        direction: DismissDirection.endToStart,
+        background: Container(
+            color: Colors.red,
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.only(right: 25.0),
+            child: Icon(Icons.delete, color: Colors.white)),
+        key: key,
+        confirmDismiss: (direction) async => await showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+                  content:
+                      Text('Are you sure you want to delete "${event.title}"?'),
+                  actions: <Widget>[
+                    FlatButton(
+                      child: Text('Cancel'),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    FlatButton(
+                      child:
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                      onPressed: () {
+                        setState(() => _model.removeEvent(event));
+                        Global.saveModel(_model);
+                        Navigator.of(context).pop();
+                      },
+                    )
+                  ],
+                )),
+        child: ListTile(
+          title: Text(
+            event.title,
+            style: TextStyle(fontFamily: _model.configuration.fontFamily),
           ),
-          FlatButton(
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
-            onPressed: () {
-              setState(() => _model.removeEvent(event));
-              Global.saveModel(_model);
-              Navigator.of(context).pop();
-            },
-          )
-        ],
-      )
-    ),
-    child: ListTile(
-      title: Text(
-        event.title,
-        style: TextStyle(fontFamily: _model.configuration.fontFamily),
-      ),
-      subtitle: Text(
-        event.isOver ? 'Event Completed' : event.timeRemaining.toString(),
-        style: TextStyle(fontFamily: _model.configuration.fontFamily),
-      ),
-      onTap: () => Navigator.push(
-        context,
-        MorpheusPageRoute(
-          parentKey: key,
-          builder: (context) => EventPage(event: event, configuration: _model.configuration)
-        )
-      ),
-    ),
-  );
+          subtitle: Text(
+            event.isOver ? 'Event Completed' : event.timeRemaining.toString(),
+            style: TextStyle(fontFamily: _model.configuration.fontFamily),
+          ),
+          onTap: () => Navigator.push(
+              context,
+              MorpheusPageRoute(
+                  parentKey: key,
+                  builder: (context) => EventPage(
+                      event: event, configuration: _model.configuration))),
+        ),
+      );
 
   bool shouldShowDivider = true;
   bool shouldShowIllustration = true;
 
   Widget get eventsList {
-    assert (_model != null);
+    assert(_model != null);
 
     final completedEvents = _model.events
         .where((event) => event.isOver)
@@ -210,101 +204,103 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     );
 
     final possibleDivider = shouldShowDivider
-        ? Divider(
-            height: 0,
-            color: textColor.withOpacity(0.4)
-        )
+        ? Divider(height: 0, color: textColor.withOpacity(0.4))
         : Container();
 
     return nonCompletedEvents.isEmpty
-    ? Column(children: [
-        expansionTile,
-        possibleDivider,
-        shouldShowIllustration || completedEvents.isEmpty
-            ? emptyScreen
-            : Container()
-      ]
-    )
-    : ListView(
-        children: [expansionTile, possibleDivider, ...nonCompletedEvents]
-    );
+        ? Column(children: [
+            expansionTile,
+            possibleDivider,
+            shouldShowIllustration || completedEvents.isEmpty
+                ? emptyScreen
+                : Container()
+          ])
+        : ListView(
+            children: [expansionTile, possibleDivider, ...nonCompletedEvents]);
   }
 
   void showSettings(BuildContext context) => showModalBottomSheet<void>(
-    shape: RoundedRectangleBorder(
-        side: BorderSide(),
-        borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(10.0),
-            topRight: Radius.circular(10.0)
-        )
-    ),
-    context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) => Container(
-        height: 260.0,
-        child: Column(
-          children: <Widget>[
-            Padding(padding: EdgeInsets.only(top: 20.0),),
-            Center(
-              child: Text(
-                'Settings',
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.title.color.withOpacity(0.75),
-                  fontSize: 18.0,
-                ),
-              )),
-            Padding(padding: EdgeInsets.only(top: 10.0)),
-            SwitchListTile(
-              title: Text(
-                'Enable Notifications',
-                style: TextStyle(fontFamily: _model.configuration.fontFamily),
-              ),
-              value: _model.configuration.shouldShowNotifications,
-              onChanged: (value) {
-                Global().notificationsManager.cancelAll();
+      shape: RoundedRectangleBorder(
+          side: BorderSide(),
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(10.0), topRight: Radius.circular(10.0))),
+      context: context,
+      builder: (context) => StatefulBuilder(
+            builder: (context, setState) => Container(
+              height: 260.0,
+              child: Column(
+                children: <Widget>[
+                  Padding(
+                    padding: EdgeInsets.only(top: 20.0),
+                  ),
+                  Center(
+                      child: Text(
+                    'Settings',
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .textTheme
+                          .title
+                          .color
+                          .withOpacity(0.75),
+                      fontSize: 18.0,
+                    ),
+                  )),
+                  Padding(padding: EdgeInsets.only(top: 10.0)),
+                  SwitchListTile(
+                      title: Text(
+                        'Enable Notifications',
+                        style: TextStyle(
+                            fontFamily: _model.configuration.fontFamily),
+                      ),
+                      value: _model.configuration.shouldShowNotifications,
+                      onChanged: (value) {
+                        Global().notificationsManager.cancelAll();
 
-                if (value) _model.events.forEach((e) => Global().notificationsManager.schedule(
-                    e.hashCode,
-                    'Countdown to ${e.title} Over',
-                    'The countdown to ${e.title} is now complete!',
-                    e.end,
-                    Global().notificationDetails,
-                    payload: json.encode(e.toJson())
-                ));
+                        if (value)
+                          _model.events.forEach((e) => Global()
+                              .notificationsManager
+                              .schedule(
+                                  e.hashCode,
+                                  'Countdown to ${e.title} Over',
+                                  'The countdown to ${e.title} is now complete!',
+                                  e.end,
+                                  Global().notificationDetails,
+                                  payload: json.encode(e.toJson())));
 
-                setState(() => _model.configuration.shouldShowNotifications = value);
-                this.setState(() => _model.configuration.shouldShowNotifications = value);
-              }
-            ),
-            SwitchListTile(
-              title: Text(
-                'Use OpenDyslexic Font',
-                style: TextStyle(
-                    fontFamily: _model.configuration.fontFamily
-                ),
+                        setState(() => _model
+                            .configuration.shouldShowNotifications = value);
+                        this.setState(() => _model
+                            .configuration.shouldShowNotifications = value);
+                      }),
+                  SwitchListTile(
+                      title: Text(
+                        'Use OpenDyslexic Font',
+                        style: TextStyle(
+                            fontFamily: _model.configuration.fontFamily),
+                      ),
+                      value: _model.configuration.shouldUseAltFont,
+                      onChanged: (value) {
+                        setState(() =>
+                            _model.configuration.shouldUseAltFont = value);
+                        this.setState(() =>
+                            _model.configuration.shouldUseAltFont = value);
+                      }),
+                  Padding(
+                    padding: EdgeInsets.only(top: 20),
+                  ),
+                  Center(
+                    child: Text(
+                      'Hourglass v1.0. Crafted with care in Canada.',
+                      style: TextStyle(
+                          fontSize: 14.0,
+                          fontFamily: _model.configuration.fontFamily,
+                          color: textColor.withOpacity(0.5)),
+                    ),
+                  )
+                ],
               ),
-              value: _model.configuration.shouldUseAltFont,
-              onChanged: (value) {
-                setState(() => _model.configuration.shouldUseAltFont = value);
-                this.setState(() => _model.configuration.shouldUseAltFont = value);
-              }
             ),
-            Padding(padding: EdgeInsets.only(top: 20),),
-            Center(
-              child: Text(
-                'Hourglass v1.0. Crafted with care in Canada.',
-                style: TextStyle(
-                  fontSize: 14.0,
-                  fontFamily: _model.configuration.fontFamily,
-                  color: textColor.withOpacity(0.5)
-                ),
-              ),
-            )
-          ],
-        ),
-      ),
-    )
-  );
+          ));
 
   @override
   Widget build(BuildContext context) {
@@ -320,9 +316,9 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         title: Text(
           'Your Events',
           style: TextStyle(
-            fontFamily: _model?.configuration?.fontFamily ?? Configuration().fontFamily,
-            color: textColor
-          ),
+              fontFamily: _model?.configuration?.fontFamily ??
+                  Configuration().fontFamily,
+              color: textColor),
         ),
         actions: <Widget>[
           PopupMenuButton<int>(
@@ -337,12 +333,10 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
       body: isLoading ? loadingView : eventsList,
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AddEventPage(model: _model),
-            fullscreenDialog: true
-          )
-        ),
+            context,
+            MaterialPageRoute(
+                builder: (context) => AddEventPage(model: _model),
+                fullscreenDialog: true)),
         tooltip: 'Add Event',
         child: Icon(Icons.add),
       ),
