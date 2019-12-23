@@ -3,39 +3,6 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-/// A generic Ratio class for quantifying a relationship between two Units
-/// For consistency, `part` must be quantifiable and less than `total`. More
-/// formally, `part.compareTo(total) < 0` must evaluate to true.
-class Ratio<Quantity extends Comparable<Quantity>> {
-  final Quantity part, total;
-
-  Ratio({@required this.part, @required this.total})
-      : assert(part != null),
-        assert(total != null),
-        assert(part.compareTo(total) <= 0);
-
-  /// Maps this Ratio to a Ratio of a possibly different type
-  Ratio<R> map<R extends Comparable<R>>(R Function(Quantity) mapping) =>
-      Ratio(part: mapping(part), total: mapping(total));
-
-  @override
-  String toString() => 'Ratio{${part.toString()} : ${total.toString()}}';
-
-  @override
-  bool operator ==(other) {
-    if (identical(this, other)) {
-      return true;
-    }
-
-    return other is Ratio<Quantity> &&
-        part == other.part &&
-        total == other.total;
-  }
-
-  @override
-  int get hashCode => part.hashCode + 37 * total.hashCode;
-}
-
 class Polygon {
   final List<Point<double>> vertices;
 
@@ -68,27 +35,37 @@ class Polygon {
 
 class _FluidViewPainter extends CustomPainter {
   final double angle;
-  final Ratio<num> progress;
+
+  /// [0.0, 1.0]
+  final double progress;
   final Color color;
+  final Radius radius;
 
   _FluidViewPainter(
-      {@required this.angle, @required this.progress, @required this.color})
-      : assert(color != null && progress != null);
+      {@required this.angle,
+      @required this.progress,
+      @required this.color,
+      @required this.radius})
+      : assert(color != null && progress != null),
+        assert(progress >= 0.0 && progress <= 1.0);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final fluidHeight = (progress.part / progress.total) * size.height;
+    final fluidHeight = progress * size.height;
 
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
 
     final polygon = Polygon([
-      Point(0.0, size.height),
-      Point(size.width, size.height),
-      Point(size.width, fluidHeight * angle + fluidHeight),
-      Point(0, fluidHeight * angle * -1 + fluidHeight)
+      Point(0.0, size.height), // bottom left
+      Point(size.width, size.height), // bottom right
+      Point(size.width, fluidHeight * angle + fluidHeight), // top right
+      Point(0, fluidHeight * angle * -1 + fluidHeight) // top left
     ]);
+
+    canvas.clipRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(0.0, 0.0, size.width, size.height), radius));
 
     canvas.drawPath(polygon.path, paint);
   }
@@ -99,20 +76,41 @@ class _FluidViewPainter extends CustomPainter {
 }
 
 class FluidView extends StatelessWidget {
+  /// Optionally, the [angle] of the device's roll value may be provided for the view to tilt accordingly
   final double angle;
-  final Color color;
-  final Ratio<num> progress;
 
-  const FluidView(
+  /// The color of the widget
+  final Color color;
+
+  /// The progress of how 'full' the widget is in the range `[0, 1]`
+  /// The minimum value `0` denotes the widget's height be the height of [size].
+  /// The maximum value `1` denotes the widget's height be 0.0
+  final double progress;
+
+  /// Optionally, the radius of the widget's corners can be specified.
+  final Radius radius;
+
+  /// The maximum possible size for the widget, with the height of the widget progressing from [size.height] down to `0.0`.
+  /// If `null`, the size of the [BuildContext] is used.
+  final Size size;
+
+  FluidView(
       {Key key,
-      @required this.angle,
       @required this.color,
-      @required this.progress})
-      : super(key: key);
+      @required this.progress,
+      this.angle = 0.0,
+      this.size,
+      this.radius = Radius.zero})
+      : assert(color != null),
+        assert(progress >= 0.0 && progress <= 1.0),
+        super(key: key);
 
   @override
   Widget build(BuildContext context) => CustomPaint(
-      size: MediaQuery.of(context).size,
-      painter:
-          _FluidViewPainter(angle: angle, progress: progress, color: color));
+      size: size ?? MediaQuery.of(context).size,
+      painter: _FluidViewPainter(
+          angle: angle,
+          progress: progress,
+          color: color,
+          radius: radius ?? Radius.zero));
 }

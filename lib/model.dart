@@ -8,21 +8,22 @@ class Model {
   final List<Event> events;
   final Configuration configuration;
 
+  Model.empty()
+      : configuration = Configuration(),
+        events = [];
+
   Model.fromJson(Map<String, dynamic> map)
-      : configuration = map == null
-            ? Configuration()
-            : Configuration.fromJson(map['configuration']),
-        events = map == null
-            ? []
-            : (map['events'] as List<dynamic>)
-                .map<Event>((rawJSON) => Event.fromJson(rawJSON))
-                .toList(); /* (map['events'] as List<dynamic>).map<Event>((e) => Event.fromJson(json.decode(e))).toList(); */
+      : assert(map != null),
+        configuration = Configuration.fromJson(map['configuration']),
+        events = (map['events'] as List<dynamic>)
+            .map<Event>((rawJSON) => Event.fromJson(rawJSON))
+            .toList();
 
   Map<String, dynamic> toJson() => {
         'configuration': configuration.toJson(),
         'events': events
             .map<dynamic>((event) => event.toJson())
-            .toList() /* events.map<String>((event) => json.encode(event.toJson())).toList() */
+            .toList()
       };
 
   int get numberOfEvents => events?.length ?? 0;
@@ -111,7 +112,6 @@ class Quote {
 
   String get _greeting {
     var hour = DateTime.now().hour;
-    print(hour.toString());
 
     if (hour >= 5 && hour < 12) return 'Have an amazing morning 😀';
     if (hour >= 12 && hour < 19) return 'Have a nice afternoon 🥳';

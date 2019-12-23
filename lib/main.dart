@@ -70,13 +70,13 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     SharedPreferences.getInstance().then((prefs) {
       var raw = prefs.getString('hourglassModel');
       setState(() {
-        _model = Model.fromJson(raw == null ? null : json.decode(raw));
+        _model = raw == null ? Model.empty() : Model.fromJson(json.decode(raw));
         isLoading = false;
 
         assert(_model != null);
       });
 
-      print(raw);
+      print((json.decode(raw) as Map<String, dynamic>).toString());
     });
 
     _timer = Timer.periodic(Duration(seconds: 1), (_) => setState(() {}));
