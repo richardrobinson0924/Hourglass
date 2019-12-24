@@ -59,7 +59,7 @@ flutter:
   #  - images/a_dot_ham.jpeg
 
   assets:
-    - assets/undraw_thoughts_e49y.png
+    - assets/empty_light.png
     - assets/void.png
 
   # An image asset can refer to one or more resolution-specific "variants", see

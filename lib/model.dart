@@ -215,3 +215,7 @@ class Event implements Comparable<Event> {
   @override
   int compareTo(Event other) => this.end.compareTo(other.end);
 }
+
+extension ThemeExtension on ThemeData {
+  Color get textColor => this.textTheme.body1.color;
+}

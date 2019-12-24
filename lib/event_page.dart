@@ -30,7 +30,9 @@ class _EventPageState extends State<EventPage> {
   double roll = 0.0;
 
   StreamSubscription<SensorEvent> _streamSubscriptions;
-  ConfettiController _confettiController;
+
+  final ConfettiController _confettiController =
+      ConfettiController(duration: const Duration(seconds: 5));
 
   _EventPageState({Key key, this.event, this.configuration}) : super();
 
@@ -40,7 +42,6 @@ class _EventPageState extends State<EventPage> {
     super.initState();
 
     _timer = Timer.periodic(Duration(seconds: 1), update);
-    _confettiController = ConfettiController(duration: Duration(seconds: 5));
 
     _streamSubscriptions = AeyriumSensor.sensorEvents
         .listen((sensorEvent) => setState(() => roll = sensorEvent.roll));
@@ -86,29 +87,27 @@ class _EventPageState extends State<EventPage> {
               style: TextStyle(
                   fontFamily: configuration.fontFamily,
                   fontSize: 20.0,
-                  color: Theme.of(context)
-                      .textTheme
-                      .body1
-                      .color
-                      .withOpacity(0.5))),
+                  color: Theme.of(context).textColor.withOpacity(0.5))),
         ],
       );
 
   @override
   Widget build(BuildContext context) {
-    var timeRemaining = event.timeRemaining;
-
-    double durationOf(DateTime t) =>
-        t.difference(event.start).inSeconds.toDouble();
+    final timeRemaining = event.timeRemaining;
 
     Padding pad(double padding) =>
         Padding(padding: EdgeInsets.only(top: padding));
 
+    var ratio = DateTime.now().difference(event.start).inSeconds /
+        event.end.difference(event.start).inSeconds;
+
+    if (!ratio.isFinite) ratio = 1.0;
+
     final fluidView = FluidView(
         angle: roll,
         color: event.color,
-        radius: Radius.circular(10.0),
-        progress: min(1.0, durationOf(DateTime.now()) / durationOf(event.end)));
+        radius: const Radius.circular(10.0),
+        progress: min(1.0, ratio));
 
     final text = Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -133,6 +132,7 @@ class _EventPageState extends State<EventPage> {
     );
 
     final appBar = AppBar(
+      brightness: DynamicTheme.of(context).brightness,
       iconTheme: IconThemeData(),
       centerTitle: true,
       elevation: 0.0,
@@ -140,71 +140,70 @@ class _EventPageState extends State<EventPage> {
         '${event.title}',
         style: TextStyle(
             fontFamily: configuration.fontFamily,
-            color: DynamicTheme.of(context).data.textTheme.body1.color),
+            color: DynamicTheme.of(context).data.textColor),
       ),
       backgroundColor: Colors.transparent,
     );
 
     return Scaffold(
+        backgroundColor: DynamicTheme.of(context).brightness == Brightness.dark
+            ? Color(0xFF121212)
+            : Colors.white,
         body: Stack(
-      children: <Widget>[
-        Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Center(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  Padding(
-                    padding: EdgeInsets.only(left: 15.0),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Padding(
+                        padding: EdgeInsets.only(left: 15.0),
+                      ),
+                      Expanded(
+                        child: text,
+                      ),
+                      Container(
+                          height: 335.0,
+                          width: 85.0,
+                          child: Material(
+                            borderRadius: BorderRadius.circular(10.0),
+                            elevation: 8.0,
+                            child: DecoratedBox(
+                                child: fluidView,
+                                decoration: BoxDecoration(
+                                    color: event.color.withOpacity(0.25),
+                                    borderRadius: BorderRadius.circular(10.0))),
+                          )),
+                      Padding(
+                        padding: EdgeInsets.only(right: 45.0),
+                      )
+                    ],
                   ),
-                  Expanded(
-                    child: text,
-                  ),
-                  Container(
-                      height: 335.0,
-                      width: 85.0,
-                      child: Material(
-                        borderRadius: BorderRadius.circular(10.0),
-                        elevation: 8.0,
-                        child: DecoratedBox(
-                            child: fluidView,
-                            decoration: BoxDecoration(
-                                color: event.color.withOpacity(0.25),
-                                borderRadius: BorderRadius.circular(10.0))),
-                      )),
                   Padding(
-                    padding: EdgeInsets.only(right: 45.0),
-                  )
+                    padding: EdgeInsets.only(top: 80.0),
+                  ),
+                  Center(
+                      child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 15.0),
+                    child: Text(
+                      Global().quote.toString(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 14.0,
+                          color: Theme.of(context).textColor.withOpacity(0.5),
+                          fontFamily: configuration.fontFamily),
+                    ),
+                  )),
                 ],
               ),
-              Padding(
-                padding: EdgeInsets.only(top: 80.0),
-              ),
-              Center(
-                  child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 15.0),
-                child: Text(
-                  Global().quote.toString(),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 14.0,
-                      color: Theme.of(context)
-                          .textTheme
-                          .body1
-                          .color
-                          .withOpacity(0.5),
-                      fontFamily: configuration.fontFamily),
-                ),
-              )),
-            ],
-          ),
-        ),
-        Align(alignment: Alignment.topCenter, child: confetti),
-        Positioned(top: 0.0, left: 0.0, right: 0.0, child: appBar)
-      ],
-    ));
+            ),
+            Align(alignment: Alignment.topCenter, child: confetti),
+            Positioned(top: 0.0, left: 0.0, right: 0.0, child: appBar)
+          ],
+        ));
   }
 }

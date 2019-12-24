@@ -22,13 +22,22 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    var contrast = Theme.of(context).brightness == Brightness.dark
+        ? Brightness.dark
+        : Brightness.dark;
+
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarBrightness: contrast,
+        statusBarIconBrightness: contrast));
+
     return DynamicTheme(
       defaultBrightness: Theme.of(context).brightness,
       data: (brightness) => ThemeData(
-        brightness: brightness,
-        primarySwatch: Colors.pink,
-        accentColor: Colors.pink,
-      ),
+          brightness: brightness,
+          primaryColor: Colors.teal, // Color(0xFFBB86FC),
+          accentColor: Colors.teal //Color(0xFFBB86FC),
+          ),
       themedWidgetBuilder: (context, theme) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',
@@ -109,39 +118,30 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            Spacer(flex: 2),
+            Spacer(flex: 4),
             Center(
               child: Theme.of(context).brightness == Brightness.dark
                   ? Image.asset('assets/void.png', width: 250)
-                  : Image.asset('assets/undraw_thoughts_e49y.png'),
+                  : Image.asset(
+                      'assets/empty_light.png',
+                      width: 300.0,
+                    ),
             ),
             Padding(padding: EdgeInsets.only(top: 30.0)),
-            Text('No events. Add something you\'re looking forward to'),
-            Spacer(flex: 3)
+            Text(
+              'No events. Add something you\'re looking forward to',
+              style: TextStyle(
+                  color: Theme.of(context).textColor.withOpacity(0.5)),
+            ),
+            Spacer(flex: 7)
           ],
         ),
       );
 
   Widget get loadingView => Container();
 
-  Future<bool> buildDismissDialog(Event event) => showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-            content: Text('Are you sure you want to delete "${event.title}"?'),
-            actions: <Widget>[
-              FlatButton(
-                child: Text('Cancel'),
-                onPressed: () => Navigator.of(context).pop(false),
-              ),
-              FlatButton(
-                child: Text('Delete', style: TextStyle(color: Colors.red)),
-                onPressed: () => Navigator.of(context).pop(true),
-              )
-            ],
-          ));
-
   Widget makeRow({@required Event event}) {
-    var key = Key(event.start.toIso8601String());
+    var key = GlobalKey();
 
     return Dismissible(
       direction: DismissDirection.endToStart,
@@ -174,9 +174,6 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     );
   }
 
-  bool shouldShowDivider = true;
-  bool shouldShowIllustration = true;
-
   var isExpansionTileExpanded = false;
 
   Widget makeEventsList() {
@@ -193,11 +190,8 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         .toList();
 
     final completedEventsWidget = CustomExpansionTile(
-      onExpansionChanged: (isExpanded) {
-        setState(() {
-          isExpansionTileExpanded = isExpanded;
-        });
-      },
+      onExpansionChanged: (isExpanded) =>
+          setState(() => isExpansionTileExpanded = isExpanded),
       initiallyExpanded: false,
       title: Text(
         'Completed Events (${completedEvents.length})',
@@ -261,11 +255,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                         child: Text(
                       'Settings',
                       style: TextStyle(
-                        color: Theme.of(context)
-                            .textTheme
-                            .body1
-                            .color
-                            .withOpacity(0.75),
+                        color: Theme.of(context).textColor.withOpacity(0.75),
                         fontSize: 18.0,
                       ),
                     )),
@@ -304,8 +294,20 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                                   child: Text(enumStringOf(color)),
                                 ))
                             .toList(),
-                        onChanged: (value) =>
-                            DynamicTheme.of(context).setBrightness(value),
+                        onChanged: (value) {
+                          DynamicTheme.of(context).setBrightness(value);
+
+                          var contrast = value == Brightness.dark
+                              ? Brightness.light
+                              : Brightness.dark;
+
+                          this.setState(() =>
+                              SystemChrome.setSystemUIOverlayStyle(
+                                  SystemUiOverlayStyle(
+                                      statusBarColor: Colors.transparent,
+                                      statusBarBrightness: contrast,
+                                      statusBarIconBrightness: contrast)));
+                        },
                         underline: Container(),
                       ),
                     ),
@@ -317,11 +319,8 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                         'Hourglass v1.0. Crafted with care in Canada.',
                         style: TextStyle(
                             fontSize: 14.0,
-                            color: Theme.of(context)
-                                .textTheme
-                                .body1
-                                .color
-                                .withOpacity(0.5)),
+                            color:
+                                Theme.of(context).textColor.withOpacity(0.5)),
                       ),
                     )
                   ],
@@ -349,24 +348,36 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: DynamicTheme.of(context).brightness == Brightness.dark
+          ? Color(0xFF121212)
+          : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        brightness: DynamicTheme.of(context).brightness,
+        backgroundColor: DynamicTheme.of(context).brightness == Brightness.dark
+            ? Color(0xFF121212)
+            : Colors.white,
         elevation: 0.0,
         centerTitle: true,
-        bottom: shouldShowDivider
-            ? AppBarDivider(
-                color: DynamicTheme.of(context).data.dividerColor,
-              )
-            : null,
+        bottom: AppBarDivider(
+          color: DynamicTheme.of(context).data.dividerColor,
+        ),
         title: Text(
           'Your Events',
           style: TextStyle(
               fontFamily: _model?.configuration?.fontFamily ??
-                  Configuration().fontFamily),
+                  Configuration().fontFamily,
+              color: DynamicTheme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black),
         ),
         actions: <Widget>[
           PopupMenuButton<int>(
-            icon: Icon(Icons.more_vert),
+            icon: Icon(
+              Icons.more_vert,
+              color: DynamicTheme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
+            ),
             onSelected: (_) => showSettings(context),
             itemBuilder: (context) => <PopupMenuEntry<int>>[
               const PopupMenuItem(value: 0, child: Text('Settings'))
