@@ -1,14 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:confetti/confetti.dart';
-import 'package:countdown/fillable_container.dart';
-import 'package:countdown/fluid_view.dart';
-import 'package:flutter/material.dart';
 import 'package:aeyrium_sensor/aeyrium_sensor.dart';
-import 'package:flutter/physics.dart';
+import 'package:confetti/confetti.dart';
+import 'package:countdown/fluid_view.dart';
+import 'package:dynamic_theme/dynamic_theme.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 import 'model.dart';
 
@@ -31,7 +30,9 @@ class _EventPageState extends State<EventPage> {
   double roll = 0.0;
 
   StreamSubscription<SensorEvent> _streamSubscriptions;
-  ConfettiController _confettiController;
+
+  final ConfettiController _confettiController =
+      ConfettiController(duration: const Duration(seconds: 5));
 
   _EventPageState({Key key, this.event, this.configuration}) : super();
 
@@ -41,7 +42,6 @@ class _EventPageState extends State<EventPage> {
     super.initState();
 
     _timer = Timer.periodic(Duration(seconds: 1), update);
-    _confettiController = ConfettiController(duration: Duration(seconds: 5));
 
     _streamSubscriptions = AeyriumSensor.sensorEvents
         .listen((sensorEvent) => setState(() => roll = sensorEvent.roll));
@@ -77,7 +77,7 @@ class _EventPageState extends State<EventPage> {
               style: TextStyle(
                   fontFamily: configuration.fontFamily,
                   fontWeight: FontWeight.w700,
-                  fontSize: configuration.shouldUseAltFont ? 60.0 : 80.0,
+                  fontSize: configuration.shouldUseAltFont ? 40.0 : 70.0,
                   fontFeatures: [
                     FontFeature.tabularFigures(),
                     FontFeature.stylisticSet(1)
@@ -86,49 +86,39 @@ class _EventPageState extends State<EventPage> {
           Text(label,
               style: TextStyle(
                   fontFamily: configuration.fontFamily,
-                  fontSize: 26.0,
-                  color: Theme.of(context)
-                      .textTheme
-                      .body1
-                      .color
-                      .withOpacity(0.5))),
+                  fontSize: 20.0,
+                  color: Theme.of(context).textColor.withOpacity(0.5))),
         ],
       );
 
   @override
   Widget build(BuildContext context) {
-    var isDark = Theme.of(context).brightness == Brightness.dark;
+    final timeRemaining = event.timeRemaining;
 
-    var textTheme = Theme.of(context).textTheme;
-    var timeRemaining = event.timeRemaining;
+    Padding pad(double padding) =>
+        Padding(padding: EdgeInsets.only(top: padding));
+
+    var ratio = DateTime.now().difference(event.start).inSeconds /
+        event.end.difference(event.start).inSeconds;
+
+    if (!ratio.isFinite) ratio = 1.0;
 
     final fluidView = FluidView(
         angle: roll,
         color: event.color,
-        progress: Ratio(
-                part: DateTime.now().difference(event.start),
-                total: event.end.difference(event.start))
-            .map((t) => max(t.inSeconds.toDouble(), 0.0)));
+        radius: const Radius.circular(10.0),
+        progress: min(1.0, ratio));
 
     final text = Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: <Widget>[
-        Spacer(flex: 3),
-        makeTimePart(timeRemaining.days, 'days'),
-        makeTimePart(timeRemaining.hours, 'hours'),
-        makeTimePart(timeRemaining.minutes, 'mins'),
-        makeTimePart(timeRemaining.seconds, 'secs'),
-        Spacer(flex: 1),
-        Center(
-            child: Text(
-          Global().quote.toString(),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              fontSize: 14.0,
-              color: textTheme.body1.color.withOpacity(0.5),
-              fontFamily: configuration.fontFamily),
-        )),
-        Spacer(flex: 4)
+        makeTimePart(timeRemaining.days, 'd'),
+        pad(5.0),
+        makeTimePart(timeRemaining.hours, 'h'),
+        pad(5.0),
+        makeTimePart(timeRemaining.minutes, 'm'),
+        pad(5.0),
+        makeTimePart(timeRemaining.seconds, 's'),
       ],
     );
 
@@ -142,29 +132,78 @@ class _EventPageState extends State<EventPage> {
     );
 
     final appBar = AppBar(
-      iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
+      brightness: DynamicTheme.of(context).brightness,
+      iconTheme: IconThemeData(),
       centerTitle: true,
       elevation: 0.0,
       title: Text(
         '${event.title}',
         style: TextStyle(
-            fontFamily: configuration.fontFamily, color: textTheme.body1.color),
+            fontFamily: configuration.fontFamily,
+            color: DynamicTheme.of(context).data.textColor),
       ),
       backgroundColor: Colors.transparent,
     );
 
     return Scaffold(
+        backgroundColor: DynamicTheme.of(context).brightness == Brightness.dark
+            ? Color(0xFF121212)
+            : Colors.white,
         body: Stack(
-      children: <Widget>[
-        Container(color: Theme.of(context).backgroundColor),
-        Align(alignment: Alignment.bottomCenter, child: fluidView),
-        Container(
-          padding: EdgeInsets.only(left: 10.0, right: 10.0),
-          child: text,
-        ),
-        Align(alignment: Alignment.topCenter, child: confetti),
-        Positioned(top: 0.0, left: 0.0, right: 0.0, child: appBar)
-      ],
-    ));
+          children: <Widget>[
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Padding(
+                        padding: EdgeInsets.only(left: 15.0),
+                      ),
+                      Expanded(
+                        child: text,
+                      ),
+                      Container(
+                          height: 335.0,
+                          width: 85.0,
+                          child: Material(
+                            borderRadius: BorderRadius.circular(10.0),
+                            elevation: 8.0,
+                            child: DecoratedBox(
+                                child: fluidView,
+                                decoration: BoxDecoration(
+                                    color: event.color.withOpacity(0.25),
+                                    borderRadius: BorderRadius.circular(10.0))),
+                          )),
+                      Padding(
+                        padding: EdgeInsets.only(right: 45.0),
+                      )
+                    ],
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(top: 80.0),
+                  ),
+                  Center(
+                      child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 15.0),
+                    child: Text(
+                      Global().quote.toString(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 14.0,
+                          color: Theme.of(context).textColor.withOpacity(0.5),
+                          fontFamily: configuration.fontFamily),
+                    ),
+                  )),
+                ],
+              ),
+            ),
+            Align(alignment: Alignment.topCenter, child: confetti),
+            Positioned(top: 0.0, left: 0.0, right: 0.0, child: appBar)
+          ],
+        ));
   }
 }
