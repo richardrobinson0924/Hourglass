@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:aeyrium_sensor/aeyrium_sensor.dart';
 import 'package:confetti/confetti.dart';
 import 'package:countdown/fluid_view.dart';
+import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:aeyrium_sensor/aeyrium_sensor.dart';
 
 import 'model.dart';
 
@@ -95,9 +96,6 @@ class _EventPageState extends State<EventPage> {
 
   @override
   Widget build(BuildContext context) {
-    var isDark = Theme.of(context).brightness == Brightness.dark;
-
-    var textTheme = Theme.of(context).textTheme;
     var timeRemaining = event.timeRemaining;
 
     double durationOf(DateTime t) =>
@@ -135,13 +133,14 @@ class _EventPageState extends State<EventPage> {
     );
 
     final appBar = AppBar(
-      iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
+      iconTheme: IconThemeData(),
       centerTitle: true,
       elevation: 0.0,
       title: Text(
         '${event.title}',
         style: TextStyle(
-            fontFamily: configuration.fontFamily, color: textTheme.body1.color),
+            fontFamily: configuration.fontFamily,
+            color: DynamicTheme.of(context).data.textTheme.body1.color),
       ),
       backgroundColor: Colors.transparent,
     );
@@ -149,7 +148,6 @@ class _EventPageState extends State<EventPage> {
     return Scaffold(
         body: Stack(
       children: <Widget>[
-        Container(color: Theme.of(context).backgroundColor),
         Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -193,7 +191,11 @@ class _EventPageState extends State<EventPage> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 14.0,
-                      color: textTheme.body1.color.withOpacity(0.5),
+                      color: Theme.of(context)
+                          .textTheme
+                          .body1
+                          .color
+                          .withOpacity(0.5),
                       fontFamily: configuration.fontFamily),
                 ),
               )),

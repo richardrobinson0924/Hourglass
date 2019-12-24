@@ -17,6 +17,7 @@ environment:
   sdk: ">=2.6.0 <3.0.0"
 
 dependencies:
+  dynamic_theme: 1.0.1
   flutter_local_notifications: 0.9.0
   material_segmented_control: ^2.0.4
   flutter_colorpicker: any
