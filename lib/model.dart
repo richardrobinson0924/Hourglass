@@ -155,6 +155,23 @@ class Quote {
   String toString() => content.isEmpty ? _greeting : '"$content" — $author';
 }
 
+class Circle extends StatelessWidget {
+  final double radius;
+  final Color color;
+
+  Circle({Key key, @required this.radius, this.color}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: radius * 2,
+        height: radius * 2,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color ?? Theme.of(context).primaryColor),
+      );
+}
+
 /// In contrast to the [Duration] class, the fields of [NormalizedDuration] are
 /// discrete parts of the total remaining time and do not represent the entire
 /// duration each

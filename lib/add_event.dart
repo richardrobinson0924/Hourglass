@@ -1,4 +1,3 @@
-import 'package:countdown/fillable_container.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -19,9 +18,17 @@ class _AddEventPageState extends State<AddEventPage> {
   var _focusNode = FocusNode();
   var _formKey = GlobalKey<FormState>();
 
+  static final colors = <Color>[
+    Colors.tealAccent,
+    Colors.deepPurpleAccent,
+    Colors.indigoAccent,
+    Colors.orange,
+    Colors.redAccent
+  ];
+
   String _eventName = '';
   DateTime _eventTime;
-  Color eventColor = Colors.blue;
+  Color eventColor = colors.first;
 
   final Model model;
 
@@ -115,35 +122,20 @@ class _AddEventPageState extends State<AddEventPage> {
         isActive: stepStates[2].isActive,
         state: stepStates[2].stepState,
         content: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: Iterable.generate(
-                colorOptions.length,
-                (index) => CircleButton(
-                      radius: 18.0,
-                      color: colorOptions[index].choice,
-                      isSelected: colorOptions[index].isSelected,
-                      onTap: () {
-                        setState(() {
-                          eventColor = colorOptions[index].choice;
-                          colorOptions
-                              .forEach((option) => option.isSelected = false);
-                          colorOptions[index].isSelected = true;
-                        });
-                      },
-                    )).toList()
-//            colorOptions
-//                .map((option) => CircleButton(
-//                      radius: 15.0,
-//                      color: option.color,
-//                      isSelected: option.isSelected,
-//                      onTap: () => setState(() {
-//                        eventColor = option.color;
-//                        colorOptions.forEach((o) => o.isSelected = false);
-//                        option.isSelected = true;
-//                      }),
-//                    ))
-//                .toList()
-            ));
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: colors.map<Widget>((color) {
+            final large = Circle(radius: 18.0, color: color);
+            final mini = Circle(radius: 7.0, color: Colors.white);
+
+            return InkResponse(
+              onTap: () => setState(() => eventColor = color),
+              radius: 30.0,
+              child: color == eventColor
+                  ? Stack(alignment: Alignment.center, children: [large, mini])
+                  : large,
+            );
+          }).toList(),
+        ));
 
     final steps = [eventNameStep, eventTimeStep, eventColorStep];
 
