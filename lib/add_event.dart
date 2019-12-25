@@ -1,11 +1,9 @@
-import 'package:countdown/state_manager.dart';
+import 'package:countdown/fillable_container.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'color_stepper.dart';
-import 'fillable_container.dart';
 import 'model.dart';
 
 class AddEventPage extends StatefulWidget {
@@ -18,8 +16,6 @@ class AddEventPage extends StatefulWidget {
 }
 
 class _AddEventPageState extends State<AddEventPage> {
-  static const titleIndex = 0, timeIndex = 1, colorIndex = 2;
-
   var _focusNode = FocusNode();
   var _formKey = GlobalKey<FormState>();
 
@@ -28,11 +24,6 @@ class _AddEventPageState extends State<AddEventPage> {
   Color eventColor = Colors.blue;
 
   final Model model;
-
-  final manager = Manager<MyStepState>(
-      steps: Iterable<MyStepState>.generate(3, (_) => MyStepState()));
-
-  bool get isDark => Theme.of(context).brightness == Brightness.dark;
 
   _AddEventPageState({Key key, this.model})
       : assert(model != null),
@@ -53,12 +44,29 @@ class _AddEventPageState extends State<AddEventPage> {
     super.dispose();
   }
 
+  var stepStates = [
+    MyStepState(isActive: true, stepState: StepState.editing),
+    MyStepState(isActive: false, stepState: StepState.indexed),
+    MyStepState(isActive: false, stepState: StepState.indexed)
+  ];
+
+  var currentStepIndex = 0;
+  var pickerColor = Colors.blue;
+
+  final colorOptions = <Option<Color>>[
+    Option(Colors.tealAccent, isSelected: true),
+    Option(Colors.deepPurpleAccent),
+    Option(Colors.indigoAccent),
+    Option(Colors.orange),
+    Option(Colors.redAccent)
+  ];
+
   @override
   Widget build(BuildContext context) {
     final eventNameStep = Step(
         title: const Text('Event Title'),
-        isActive: manager[titleIndex].isActive,
-        state: manager[titleIndex].state,
+        isActive: stepStates[0].isActive,
+        state: stepStates[0].stepState,
         content: TextFormField(
           focusNode: _focusNode,
           keyboardType: TextInputType.text,
@@ -76,8 +84,8 @@ class _AddEventPageState extends State<AddEventPage> {
 
     final eventTimeStep = Step(
         title: const Text('Event Time'),
-        isActive: manager[timeIndex].isActive,
-        state: manager[timeIndex].state,
+        isActive: stepStates[1].isActive,
+        state: stepStates[1].stepState,
         content: DateTimeField(
           readOnly: true,
           initialValue: DateTime(now.year, now.month, now.day, now.hour + 1),
@@ -102,46 +110,55 @@ class _AddEventPageState extends State<AddEventPage> {
           onSaved: (value) => _eventTime = value,
         ));
 
-    final colors = [
-      Colors.blue,
-      Colors.pink,
-      Colors.indigo,
-      Colors.teal,
-      Colors.orange
-    ];
-
     final eventColorStep = Step(
-      title: const Text('Choose a Color'),
-      isActive: manager[colorIndex].isActive,
-      state: manager[colorIndex].state,
-      content: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: colors
-            .map((color) => CircleButton(
-                color: color,
-                radius: 18.0,
-                onTap: () => setState(() => eventColor = color)))
-            .toList(),
-      ),
-    );
+        title: const Text('Choose a Color'),
+        isActive: stepStates[2].isActive,
+        state: stepStates[2].stepState,
+        content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: Iterable.generate(
+                colorOptions.length,
+                (index) => CircleButton(
+                      radius: 18.0,
+                      color: colorOptions[index].choice,
+                      isSelected: colorOptions[index].isSelected,
+                      onTap: () {
+                        setState(() {
+                          eventColor = colorOptions[index].choice;
+                          colorOptions
+                              .forEach((option) => option.isSelected = false);
+                          colorOptions[index].isSelected = true;
+                        });
+                      },
+                    )).toList()
+//            colorOptions
+//                .map((option) => CircleButton(
+//                      radius: 15.0,
+//                      color: option.color,
+//                      isSelected: option.isSelected,
+//                      onTap: () => setState(() {
+//                        eventColor = option.color;
+//                        colorOptions.forEach((o) => o.isSelected = false);
+//                        option.isSelected = true;
+//                      }),
+//                    ))
+//                .toList()
+            ));
 
     final steps = [eventNameStep, eventTimeStep, eventColorStep];
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Add Event'),
-        backgroundColor: /* isDark ? ThemeData.dark().appBarTheme.color : */ eventColor,
       ),
       body: Container(
         child: Form(
             key: _formKey,
-            child: ColorStepper(
-              accentColor: eventColor,
+            child: Stepper(
               steps: steps,
               type: StepperType.vertical,
-              currentStep: manager.currentIndex,
-              onStepTapped: (step) =>
-                  setState(() => manager.currentIndex = step),
+              currentStep: currentStepIndex,
+              onStepTapped: onStepTapped,
               onStepContinue: _onContinueFunction(),
               onStepCancel: () => Navigator.pop(context),
             )),
@@ -149,17 +166,33 @@ class _AddEventPageState extends State<AddEventPage> {
     );
   }
 
-  Callable _onContinueFunction() {
-    var goToNextPage = () => setState(() => manager.currentIndex += 1);
+  void onStepTapped(int stepIndex) => setState(() {
+        currentStepIndex = stepIndex;
+        stepStates[currentStepIndex].isActive = true;
+        stepStates[currentStepIndex].stepState = StepState.editing;
 
-    switch (manager.currentIndex) {
-      case titleIndex:
+        for (int i = 0; i < currentStepIndex; i += 1) {
+          stepStates[i].isActive = false;
+          stepStates[i].stepState = StepState.complete;
+        }
+
+        for (int i = currentStepIndex + 1; i < stepStates.length; i += 1) {
+          stepStates[i].isActive = false;
+          stepStates[i].stepState = StepState.indexed;
+        }
+      });
+
+  void Function() _onContinueFunction() {
+    var goToNextPage = () => onStepTapped(currentStepIndex + 1);
+
+    switch (currentStepIndex) {
+      case 0:
         return _eventName.trim().isEmpty ? null : goToNextPage;
 
-      case timeIndex:
+      case 1:
         return goToNextPage;
 
-      case colorIndex:
+      case 2:
         return () {
           model.addEvent(Event(
               title: this._eventName,
@@ -176,29 +209,20 @@ class _AddEventPageState extends State<AddEventPage> {
   }
 }
 
-class MyStepState implements MyStep {
-  bool isActive;
-  StepState state;
+class Option<T> {
+  final T choice;
+  bool isSelected;
 
-  MyStepState({this.isActive, this.state});
-
-  @override
-  void onStepIsCurrent() {
-    isActive = true;
-    state = StepState.editing;
-  }
+  Option(this.choice, {this.isSelected = false});
 
   @override
-  void onStepIsComplete() {
-    isActive = false;
-    state = StepState.complete;
-  }
-
-  @override
-  void onStepIsUpcoming() {
-    isActive = false;
-    state = StepState.disabled;
-  }
+  String toString() =>
+      'Option(\n\tchoice: ${choice.toString()}\n\tisSelected: $isSelected\n)';
 }
 
-typedef Callable = void Function();
+class MyStepState {
+  bool isActive;
+  StepState stepState;
+
+  MyStepState({@required this.isActive, @required this.stepState});
+}
