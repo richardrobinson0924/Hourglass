@@ -11,7 +11,7 @@ description: A new Flutter application.
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.0.0+1
+version: 1.0.0+4
 
 environment:
   sdk: ">=2.6.0 <3.0.0"
@@ -19,12 +19,9 @@ environment:
 dependencies:
   dynamic_theme: 1.0.1
   flutter_local_notifications: 0.9.0
-  material_segmented_control: ^2.0.4
-  flutter_material_color_picker: 1.0.5
   http: 0.12.0+2
   confetti: any
   aeyrium_sensor: ^1.0.7
-  flutter_statusbarcolor: 0.2.3
   morpheus: 1.2.2+1
   duration: 2.0.8
   shared_preferences: 0.5.4+8
@@ -38,8 +35,14 @@ dependencies:
   cupertino_icons: ^0.1.2
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.7.4
   flutter_test:
     sdk: flutter
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon.png"
 
 
 # For information on the generic Dart part of this file, see the
@@ -61,6 +64,7 @@ flutter:
   assets:
     - assets/empty_light.png
     - assets/void.png
+    - assets/icon.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

@@ -4,22 +4,39 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class Polygon {
-  final List<Point<double>> vertices;
+  final List<Point> vertices;
 
+  /// A class representing an `n`-sides polygon where `n >= 3`
   Polygon(this.vertices) : assert(vertices.length >= 3);
 
+  Polygon.square({num edgeLength = 1.0})
+      : this([
+          Point(0.0, 0.0),
+          Point(edgeLength, 0.0),
+          Point(edgeLength, edgeLength),
+          Point(0.0, edgeLength)
+        ]);
+
+  /// Returns [this] as a [Path] instance
   Path get path {
     var ret = Path();
-    ret.moveTo(vertices[0].x, vertices[0].y);
+    ret.moveTo(vertices[0].x.toDouble(), vertices[0].y.toDouble());
 
     for (int i = 1; i < vertices.length; i += 1) {
-      ret.lineTo(vertices[i].x, vertices[i].y);
+      ret.lineTo(vertices[i].x.toDouble(), vertices[i].y.toDouble());
     }
 
     ret.close();
     return ret;
   }
 
+  /// Returns a new [Polygon] mapped using [vertices] according to [f]
+  Polygon map(Point Function(Point) f) => Polygon(vertices.map(f).toList());
+
+  Polygon offsetBy(Offset offset) =>
+      map((p) => Point(p.x + offset.dx, p.y + offset.dy));
+
+  /// Returns the area of [this]
   double get area {
     var ret = 0.0;
     var j = vertices.length - 1;
@@ -31,6 +48,10 @@ class Polygon {
 
     return (ret / 2.0).abs();
   }
+
+  @override
+  String toString() =>
+      'Polygon(points=\n\t[${vertices.map((v) => v.toString).join('\n\t')}\n])';
 }
 
 class _FluidViewPainter extends CustomPainter {

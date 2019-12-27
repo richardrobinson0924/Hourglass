@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:countdown/prose.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -61,45 +62,24 @@ class Model {
   }
 }
 
-enum MyColorScheme { SystemDefault, Dark, Light }
-
-extension Ex on MyColorScheme {
-  String get name {
-    switch (this) {
-      case MyColorScheme.SystemDefault:
-        return 'System Default';
-      case MyColorScheme.Light:
-        return 'The Light Side';
-      case MyColorScheme.Dark:
-        return 'The Dark Side';
-      default:
-        throw Exception();
-    }
-  }
-}
-
 class Configuration {
   bool shouldShowNotifications;
   bool shouldUseAltFont;
-  MyColorScheme colorScheme;
 
   String get fontFamily => !shouldUseAltFont ? 'Inter' : 'OpenDyslexic';
 
   Configuration()
       : shouldUseAltFont = false,
-        shouldShowNotifications = true,
-        colorScheme = MyColorScheme.SystemDefault;
+        shouldShowNotifications = true;
 
   Configuration.fromJson(Map<String, dynamic> json)
       : shouldShowNotifications =
             json['shouldShowNotifications'] as bool ?? true,
-        shouldUseAltFont = json['shoudUseAltFont'] as bool ?? false,
-        colorScheme = MyColorScheme.values[json['colorScheme'] as int ?? 0];
+        shouldUseAltFont = json['shoudUseAltFont'] as bool ?? false;
 
   Map<String, dynamic> toJson() => {
         'shouldShowNotifications': shouldShowNotifications,
-        'shouldUseAltFont': shouldUseAltFont,
-        'colorScheme': colorScheme.index
+        'shouldUseAltFont': shouldUseAltFont
       };
 }
 
@@ -109,7 +89,7 @@ class Global {
   factory Global() => _instance;
   Global._internal();
 
-  var quote = Quote();
+  String prose = Greeting().toString();
 
   final notificationsManager = FlutterLocalNotificationsPlugin();
 
@@ -124,35 +104,11 @@ class Global {
       null);
 
   static void saveModel(Model model) async {
-    var prefs = await SharedPreferences.getInstance();
-    prefs.setString('hourglassModel', json.encode(model.toJson()));
+    if (model != null) {
+      var prefs = await SharedPreferences.getInstance();
+      prefs.setString('hourglassModel', json.encode(model.toJson()));
+    }
   }
-}
-
-/// A class to aide in parsing from a JSON HTTP GET request into a formatted [toString]
-class Quote {
-  final String content;
-  final String author;
-
-  Quote({this.content = '', this.author = ''});
-
-  Quote.fromJson(Map<String, dynamic> json)
-      : this(
-            content: json['contents']['quotes'][0]['quote'],
-            author: json['contents']['quotes'][0]['author']);
-
-  String get _greeting {
-    var hour = DateTime.now().hour;
-
-    if (hour >= 5 && hour < 12) return 'Have an amazing morning 😀';
-    if (hour >= 12 && hour < 19) return 'Have a nice afternoon 🥳';
-    if (hour >= 19 || hour < 5) return 'Have a fantastic night 🥱';
-
-    throw Exception('Did not satisfy any condition');
-  }
-
-  @override
-  String toString() => content.isEmpty ? _greeting : '"$content" — $author';
 }
 
 class Circle extends StatelessWidget {
@@ -189,12 +145,14 @@ class NormalizedDuration {
         this.hours = totalDuration.inHours.remainder(Duration.hoursPerDay),
         this.days = totalDuration.inDays;
 
-  /// Formats the duration as a [String]; for example: `42 days 23 hrs 59 mins 00 secs`
   @override
-  String toString() => '$days ${days == 1 ? 'day' : 'days'}, '
-      '$hours ${hours == 1 ? 'hr' : 'hrs'}, '
-      '$minutes ${minutes == 1 ? 'min' : 'mins'}, '
-      '$seconds ${seconds == 1 ? 'sec' : 'secs'}';
+  String toString() =>
+      <String, int>{'day': days, 'hour': hours, 'min': minutes, 'sec': seconds}
+          .entries
+          .map<String>((entry) => (entry.value == 1)
+              ? '1 ${entry.key}'
+              : '${entry.value} ${entry.key}s')
+          .join(', ');
 }
 
 class Event implements Comparable<Event> {

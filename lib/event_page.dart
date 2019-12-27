@@ -190,7 +190,7 @@ class _EventPageState extends State<EventPage> {
                       child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 15.0),
                     child: Text(
-                      Global().quote.toString(),
+                      Global().prose.toString(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 14.0,

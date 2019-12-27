@@ -1,16 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
-import 'package:countdown/CustomExpansionTile.dart';
 import 'package:countdown/add_event.dart';
-import 'package:countdown/app_bar_divider.dart';
 import 'package:countdown/event_page.dart';
+import 'package:countdown/prose.dart';
+import 'package:countdown/radial_progress_indicator.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:http/http.dart' as http;
 import 'package:morpheus/page_routes/morpheus_page_route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -68,6 +68,8 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     super.initState();
 
+    Prose.fetch().then((prose) => Global().prose = prose);
+
     final initSettings = InitializationSettings(
         AndroidInitializationSettings('app_icon'), IOSInitializationSettings());
 
@@ -75,8 +77,10 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         onSelectNotification: (payload) async => Navigator.push(
             context,
             MorpheusPageRoute(
-                builder: (context) =>
-                    EventPage(event: Event.fromJson(json.decode(payload))))));
+                builder: (context) => EventPage(
+                      event: Event.fromJson(json.decode(payload)),
+                      configuration: _model?.configuration ?? Configuration(),
+                    ))));
 
     SharedPreferences.getInstance().then((prefs) {
       var raw = prefs.getString('hourglassModel');
@@ -89,14 +93,6 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     });
 
     _timer = Timer.periodic(Duration(seconds: 1), (_) => setState(() {}));
-
-    http.get(quoteURL).then((response) {
-      if (response.statusCode == 200) {
-        Global().quote = Quote.fromJson(json.decode(response.body));
-      } else {
-        print('Failed with status code ${response.statusCode}');
-      }
-    });
   }
 
   @override
@@ -141,91 +137,63 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   Widget get loadingView => Container();
 
   Widget makeRow({@required Event event}) {
-    var key = GlobalKey();
+    final transitionKey = GlobalKey();
+    final listTileKey = Key(event.hashCode.toString());
 
     return Dismissible(
-      direction: DismissDirection.endToStart,
-      background: Container(
-          color: Colors.blueAccent,
-          alignment: Alignment.centerRight,
-          padding: EdgeInsets.only(right: 25.0),
-          child: Icon(Icons.delete, color: Colors.white)),
-      key: key,
       onDismissed: (_) {
         setState(() => _model.removeEvent(event));
         Global.saveModel(_model);
       },
-      child: ListTile(
-        title: Text(
-          event.title,
-          style: TextStyle(fontFamily: _model.configuration.fontFamily),
+      key: listTileKey,
+      child: Card(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Color(0xFF1C1C1C)
+            : Colors.white,
+        key: transitionKey,
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 5.0),
+          child: ListTile(
+            leading: RadialProgressIndicator(
+              radius: 20.0,
+              color: event.color,
+              backgroundColor: event.color.withOpacity(0.25),
+              progress: min(
+                  1.0,
+                  DateTime.now().difference(event.end).inSeconds /
+                      event.start.difference(event.end).inSeconds),
+            ),
+            key: listTileKey,
+            title: Text(event.title),
+            subtitle: Text(event.isOver
+                ? 'Event Completed'
+                : 'in ${event.timeRemaining.toString()}'),
+            onTap: () => Navigator.push(
+                context,
+                MorpheusPageRoute(
+                    parentKey: transitionKey,
+                    builder: (context) => EventPage(
+                        event: event, configuration: _model.configuration))),
+          ),
         ),
-        subtitle: Text(
-          event.isOver ? 'Event Completed' : event.timeRemaining.toString(),
-          style: TextStyle(fontFamily: _model.configuration.fontFamily),
-        ),
-        onTap: () => Navigator.push(
-            context,
-            MorpheusPageRoute(
-                parentKey: key,
-                builder: (context) => EventPage(
-                    event: event, configuration: _model.configuration))),
       ),
     );
   }
 
-  var isExpansionTileExpanded = false;
-
   Widget makeEventsList() {
     assert(_model != null);
 
-    final completedEvents = _model.events
-        .where((event) => event.isOver)
-        .map((event) => makeRow(event: event))
-        .toList();
+    final list = _model.events.map((event) => makeRow(event: event)).toList();
 
-    final inProgressEvents = _model.events
-        .where((event) => !event.isOver)
-        .map((event) => makeRow(event: event))
-        .toList();
-
-    final completedEventsWidget = CustomExpansionTile(
-      onExpansionChanged: (isExpanded) =>
-          setState(() => isExpansionTileExpanded = isExpanded),
-      initiallyExpanded: false,
-      title: Text(
-        'Completed Events (${completedEvents.length})',
-        style: TextStyle(fontFamily: _model.configuration.fontFamily),
-      ),
-      children: completedEvents,
-    );
-
-    List<Widget> list = List<Widget>()..addAll(inProgressEvents);
-
-    if (completedEvents.isNotEmpty) {
-      list.add(Container(
-        height: 20.0,
-      ));
-      list.add(completedEventsWidget);
-    }
-
-    return Stack(
-      children: <Widget>[
-        (inProgressEvents.isEmpty &&
-                (completedEvents.isEmpty || !isExpansionTileExpanded))
-            ? emptyScreen
-            : Container(),
-        ListView.separated(
-            shrinkWrap: true,
-            itemBuilder: (_, index) => list[index],
-            separatorBuilder: (_, index) => Divider(
-                  color: Theme.of(context).dividerColor,
-                  height: 0.0,
-                  thickness: 1.0,
-                ),
-            itemCount: list.length)
-      ],
-    );
+    return list.isEmpty
+        ? emptyScreen
+        : ListView.separated(
+            shrinkWrap: false,
+            separatorBuilder: (_, index) => SizedBox(height: 3.0),
+            itemBuilder: (_, index) => Container(
+                padding: EdgeInsets.symmetric(horizontal: 9.0),
+                child: list[index]),
+            itemCount: list.length);
   }
 
   void showSettings(BuildContext context) {
@@ -350,17 +318,14 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     return Scaffold(
       backgroundColor: DynamicTheme.of(context).brightness == Brightness.dark
           ? Color(0xFF121212)
-          : Colors.white,
+          : null,
       appBar: AppBar(
+        elevation: 2.0,
         brightness: DynamicTheme.of(context).brightness,
         backgroundColor: DynamicTheme.of(context).brightness == Brightness.dark
             ? Color(0xFF121212)
             : Colors.white,
-        elevation: 0.0,
         centerTitle: true,
-        bottom: AppBarDivider(
-          color: DynamicTheme.of(context).data.dividerColor,
-        ),
         title: Text(
           'Your Events',
           style: TextStyle(
@@ -385,7 +350,10 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           )
         ],
       ),
-      body: isLoading ? loadingView : makeEventsList(),
+      body: isLoading
+          ? loadingView
+          : Container(
+              padding: EdgeInsets.only(top: 10.0), child: makeEventsList()),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
             context,

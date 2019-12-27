@@ -19,7 +19,7 @@ class _AddEventPageState extends State<AddEventPage> {
   var _formKey = GlobalKey<FormState>();
 
   static final colors = <Color>[
-    Colors.tealAccent,
+    Colors.teal,
     Colors.deepPurpleAccent,
     Colors.indigoAccent,
     Colors.orange,
@@ -27,7 +27,12 @@ class _AddEventPageState extends State<AddEventPage> {
   ];
 
   String _eventName = '';
-  DateTime _eventTime;
+
+  DateTime _eventTime = () {
+    var now = DateTime.now();
+    return DateTime(now.year, now.month, now.day, now.hour + 1);
+  }();
+
   Color eventColor = colors.first;
 
   final Model model;
@@ -40,9 +45,6 @@ class _AddEventPageState extends State<AddEventPage> {
   void initState() {
     super.initState();
     _focusNode.addListener(() => setState(() {}));
-
-    var now = DateTime.now();
-    _eventTime = DateTime(now.year, now.month, now.day, now.hour + 1);
   }
 
   @override
@@ -51,29 +53,22 @@ class _AddEventPageState extends State<AddEventPage> {
     super.dispose();
   }
 
-  var stepStates = [
-    MyStepState(isActive: true, stepState: StepState.editing),
-    MyStepState(isActive: false, stepState: StepState.indexed),
-    MyStepState(isActive: false, stepState: StepState.indexed)
+  final stepStates = [
+    MyStepState(
+        name: 'What\'s your Event?', isActive: true, state: StepState.editing),
+    MyStepState(name: 'When is it?', isActive: false, state: StepState.indexed),
+    MyStepState(
+        name: 'Choose a Color', isActive: false, state: StepState.indexed)
   ];
 
   var currentStepIndex = 0;
-  var pickerColor = Colors.blue;
-
-  final colorOptions = <Option<Color>>[
-    Option(Colors.tealAccent, isSelected: true),
-    Option(Colors.deepPurpleAccent),
-    Option(Colors.indigoAccent),
-    Option(Colors.orange),
-    Option(Colors.redAccent)
-  ];
 
   @override
   Widget build(BuildContext context) {
     final eventNameStep = Step(
         title: const Text('Event Title'),
         isActive: stepStates[0].isActive,
-        state: stepStates[0].stepState,
+        state: stepStates[0].state,
         content: TextFormField(
           focusNode: _focusNode,
           keyboardType: TextInputType.text,
@@ -92,7 +87,7 @@ class _AddEventPageState extends State<AddEventPage> {
     final eventTimeStep = Step(
         title: const Text('Event Time'),
         isActive: stepStates[1].isActive,
-        state: stepStates[1].stepState,
+        state: stepStates[1].state,
         content: DateTimeField(
           readOnly: true,
           initialValue: DateTime(now.year, now.month, now.day, now.hour + 1),
@@ -120,7 +115,7 @@ class _AddEventPageState extends State<AddEventPage> {
     final eventColorStep = Step(
         title: const Text('Choose a Color'),
         isActive: stepStates[2].isActive,
-        state: stepStates[2].stepState,
+        state: stepStates[2].state,
         content: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: colors.map<Widget>((color) {
@@ -161,16 +156,16 @@ class _AddEventPageState extends State<AddEventPage> {
   void onStepTapped(int stepIndex) => setState(() {
         currentStepIndex = stepIndex;
         stepStates[currentStepIndex].isActive = true;
-        stepStates[currentStepIndex].stepState = StepState.editing;
+        stepStates[currentStepIndex].state = StepState.editing;
 
         for (int i = 0; i < currentStepIndex; i += 1) {
           stepStates[i].isActive = false;
-          stepStates[i].stepState = StepState.complete;
+          stepStates[i].state = StepState.complete;
         }
 
         for (int i = currentStepIndex + 1; i < stepStates.length; i += 1) {
           stepStates[i].isActive = false;
-          stepStates[i].stepState = StepState.indexed;
+          stepStates[i].state = StepState.indexed;
         }
       });
 
@@ -201,20 +196,11 @@ class _AddEventPageState extends State<AddEventPage> {
   }
 }
 
-class Option<T> {
-  final T choice;
-  bool isSelected;
-
-  Option(this.choice, {this.isSelected = false});
-
-  @override
-  String toString() =>
-      'Option(\n\tchoice: ${choice.toString()}\n\tisSelected: $isSelected\n)';
-}
-
 class MyStepState {
+  final String name;
   bool isActive;
-  StepState stepState;
+  StepState state;
 
-  MyStepState({@required this.isActive, @required this.stepState});
+  MyStepState(
+      {@required this.name, @required this.isActive, @required this.state});
 }
