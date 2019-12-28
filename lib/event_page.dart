@@ -45,6 +45,10 @@ class _EventPageState extends State<EventPage> {
 
     _streamSubscriptions = AeyriumSensor.sensorEvents
         .listen((sensorEvent) => setState(() => roll = sensorEvent.roll));
+
+    if (event.isOver) {
+      Global.instance().notificationsManager.cancel(event.hashCode);
+    }
   }
 
   void update(Timer timer) {
@@ -190,7 +194,7 @@ class _EventPageState extends State<EventPage> {
                       child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 15.0),
                     child: Text(
-                      Global().prose.toString(),
+                      Global.instance().prose.toString(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 14.0,

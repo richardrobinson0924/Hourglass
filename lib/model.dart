@@ -6,6 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+extension DurationExt on Duration {
+  double operator /(Duration other) => this.inSeconds / other.inSeconds;
+}
+
 class Model {
   final List<Event> events;
   final Configuration configuration;
@@ -36,12 +40,12 @@ class Model {
     events.add(e);
 
     if (configuration.shouldShowNotifications) {
-      Global().notificationsManager.schedule(
+      Global.instance().notificationsManager.schedule(
           e.hashCode,
           'Countdown to ${e.title} Over',
           'The countdown to ${e.title} is now complete!',
           e.end,
-          Global().notificationDetails,
+          Global.instance().notificationDetails,
           payload: json.encode(e.toJson()));
     }
   }
@@ -49,7 +53,7 @@ class Model {
   void removeEvent(Event e) {
     events.remove(e);
 
-    Global().notificationsManager.cancel(e.hashCode);
+    Global.instance().notificationsManager.cancel(e.hashCode);
   }
 
   @override
@@ -86,16 +90,16 @@ class Configuration {
 /// Global access singleton
 class Global {
   static final Global _instance = Global._internal();
-  factory Global() => _instance;
+  factory Global.instance() => _instance;
   Global._internal();
 
-  String prose = Greeting().toString();
+  String prose = Greeting.instance().toString();
 
   final notificationsManager = FlutterLocalNotificationsPlugin();
 
   final notificationDetails = NotificationDetails(
       AndroidNotificationDetails(
-        'com.richardrobinson.countdown',
+        'com.richardrobinson.countdown2',
         'Hourglass',
         'The countdown app',
         importance: Importance.Max,
@@ -189,6 +193,20 @@ class Event implements Comparable<Event> {
 
   @override
   int compareTo(Event other) => this.end.compareTo(other.end);
+
+  @override
+  int get hashCode => hashValues(title, start, end, color);
+
+  @override
+  bool operator ==(other) {
+    if (identical(this, other)) return true;
+
+    return other is Event &&
+        other.start == this.start &&
+        other.title == this.title &&
+        other.end == this.end &&
+        other.color == this.color;
+  }
 }
 
 extension ThemeExtension on ThemeData {

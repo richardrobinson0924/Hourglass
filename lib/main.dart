@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:countdown/add_event.dart';
 import 'package:countdown/event_page.dart';
@@ -63,32 +62,40 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   var isLoading = true;
   Timer _timer;
 
+  Future<dynamic> onSelectNotification(String payload) async {
+    final event = Event.fromJson(json.decode(payload));
+
+    Global.instance().notificationsManager.cancel(event.hashCode);
+
+    Navigator.push(
+        context,
+        MorpheusPageRoute(
+            builder: (context) => EventPage(
+                  event: event,
+                  configuration: _model?.configuration ?? Configuration(),
+                )));
+  }
+
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
     super.initState();
 
-    Prose.fetch().then((prose) => Global().prose = prose);
+    Prose.fetch().then((prose) => Global.instance().prose = prose);
 
     final initSettings = InitializationSettings(
-        AndroidInitializationSettings('app_icon'), IOSInitializationSettings());
+        AndroidInitializationSettings('notification'),
+        IOSInitializationSettings());
 
-    Global().notificationsManager.initialize(initSettings,
-        onSelectNotification: (payload) async => Navigator.push(
-            context,
-            MorpheusPageRoute(
-                builder: (context) => EventPage(
-                      event: Event.fromJson(json.decode(payload)),
-                      configuration: _model?.configuration ?? Configuration(),
-                    ))));
+    Global.instance()
+        .notificationsManager
+        .initialize(initSettings, onSelectNotification: onSelectNotification);
 
     SharedPreferences.getInstance().then((prefs) {
       var raw = prefs.getString('hourglassModel');
       setState(() {
         _model = raw == null ? Model.empty() : Model.fromJson(json.decode(raw));
         isLoading = false;
-
-        assert(_model != null);
       });
     });
 
@@ -152,16 +159,14 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
             : Colors.white,
         key: transitionKey,
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 5.0),
+          padding: EdgeInsets.symmetric(vertical: 6.0),
           child: ListTile(
             leading: RadialProgressIndicator(
               radius: 20.0,
               color: event.color,
               backgroundColor: event.color.withOpacity(0.25),
-              progress: min(
-                  1.0,
-                  DateTime.now().difference(event.end).inSeconds /
-                      event.start.difference(event.end).inSeconds),
+              progress: DateTime.now().difference(event.end) /
+                  event.start.difference(event.end),
             ),
             key: listTileKey,
             title: Text(event.title),
@@ -299,16 +304,18 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
 
       if (oldNotificationsValue !=
           _model.configuration.shouldShowNotifications) {
-        Global().notificationsManager.cancelAll();
+        Global.instance().notificationsManager.cancelAll();
 
         if (_model.configuration.shouldShowNotifications)
-          _model.events.forEach((e) => Global().notificationsManager.schedule(
-              e.hashCode,
-              'Countdown to ${e.title} Over',
-              'The countdown to ${e.title} is now complete!',
-              e.end,
-              Global().notificationDetails,
-              payload: json.encode(e.toJson())));
+          _model.events.forEach((e) => Global.instance()
+              .notificationsManager
+              .schedule(
+                  e.hashCode,
+                  'Countdown to ${e.title} Over',
+                  'The countdown to ${e.title} is now complete!',
+                  e.end,
+                  Global.instance().notificationDetails,
+                  payload: json.encode(e.toJson())));
       }
     });
   }
@@ -331,17 +338,13 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           style: TextStyle(
               fontFamily: _model?.configuration?.fontFamily ??
                   Configuration().fontFamily,
-              color: DynamicTheme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black),
+              color: Theme.of(context).textColor),
         ),
         actions: <Widget>[
           PopupMenuButton<int>(
             icon: Icon(
               Icons.more_vert,
-              color: DynamicTheme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black,
+              color: Theme.of(context).textColor,
             ),
             onSelected: (_) => showSettings(context),
             itemBuilder: (context) => <PopupMenuEntry<int>>[

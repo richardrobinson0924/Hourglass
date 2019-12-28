@@ -1,4 +1,4 @@
-package com.richardrobinson.countdown
+package com.richardrobinson.countdown2
 
 import android.os.Bundle
 

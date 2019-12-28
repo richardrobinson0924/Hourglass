@@ -6,8 +6,8 @@ abstract class Prose {
   Future<String> get();
 
   static Future<String> fetch() async {
-    final choices = [Quote(), Joke()]..shuffle();
-    var prose = await Greeting().get();
+    final choices = [Quote.instance(), Joke.instance()]..shuffle();
+    var prose = await Greeting.instance().get();
 
     for (int i = 0; i < choices.length; i += 1) {
       var tmp = await choices[i].get();
@@ -28,7 +28,7 @@ class HttpStatus {
 class Quote implements Prose {
   static final Quote _singleton = Quote._();
 
-  factory Quote() => _singleton;
+  factory Quote.instance() => _singleton;
 
   Quote._();
 
@@ -37,14 +37,11 @@ class Quote implements Prose {
       ' - ${json['contents']['quotes'][0]['author']}';
 
   Future<String> get() async {
-    print('Getting quote...');
     const quoteURL = 'http://quotes.rest/qod.json';
 
     var response = await http.get(quoteURL);
 
     if (response.statusCode == HttpStatus.success) {
-      print('Quote acquired');
-
       return fromMap(json.decode(response.body));
     }
 
@@ -55,7 +52,7 @@ class Quote implements Prose {
 class Joke implements Prose {
   static final Joke _singleton = Joke._();
 
-  factory Joke() => _singleton;
+  factory Joke.instance() => _singleton;
 
   Joke._();
 
@@ -63,15 +60,12 @@ class Joke implements Prose {
       (json['contents']['jokes'][0]['joke']['text'] as String);
 
   Future<String> get() async {
-    print('Getting joke...');
     const jokeURL = 'https://api.jokes.one/jod';
 
     var response =
         await http.get(jokeURL, headers: {'Content-type': 'application/json'});
 
     if (response.statusCode == HttpStatus.success) {
-      print('Joke acquired');
-
       final decoded = json.decode(response.body);
       final joke = decoded['contents']['jokes'][0]['joke'];
 
@@ -91,7 +85,7 @@ class Joke implements Prose {
 class Greeting implements Prose {
   static final Greeting _singleton = Greeting._();
 
-  factory Greeting() => _singleton;
+  factory Greeting.instance() => _singleton;
 
   Greeting._();
 

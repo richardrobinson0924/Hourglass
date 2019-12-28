@@ -1,33 +1,25 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:countdown/model.dart';
 import 'package:flutter/material.dart';
 
-class _CircleProgress extends CustomPainter {
+class _Wedge extends CustomPainter {
   final Color color;
-  final Color backgroundColor;
   final double progress;
 
-  _CircleProgress(this.progress, this.color, this.backgroundColor);
+  _Wedge({@required this.progress, @required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final outerCircle = Paint()
-      ..color = backgroundColor
-      ..style = PaintingStyle.fill;
-
     final completeArc = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
 
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = min(size.width / 2, size.height / 2);
-
-    canvas.drawCircle(center, radius, outerCircle);
-
     final angle = 2 * pi * progress;
 
-    final rect = Rect.fromCircle(center: center, radius: radius);
+    final rect = Rect.fromCircle(center: center, radius: size.width / 2);
     final path = Path()
       ..moveTo(center.dx, center.dy)
       ..arcTo(rect, -pi / 2, angle, false);
@@ -39,15 +31,15 @@ class _CircleProgress extends CustomPainter {
   bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
 
+/// Similar to [CircularProgressIndicator], except it shows the progress in terms
+/// of a circular fill instead of border. Additionally, changes appearance when
+/// the progress is out of range `[0. 1]`
 class RadialProgressIndicator extends StatelessWidget {
   final Color color;
   final Color backgroundColor;
 
-  /// The value of the progress in the range `[0, 1]`. If given an out of range value,
-  /// the progress is clamped to the acceptable range according to:
-  ///
-  /// If [progress] > 1.0 (including `Infinity`) or `NaN`, clamp to `1.0`;
-  /// If [progress] < 0.0, clamp to `0.0`
+  /// The value of the progress in the range `[0, 1]`. All values outside of this range,
+  /// or non-finite, are considered 'complete'
   final double progress;
   final double radius;
 
@@ -60,23 +52,22 @@ class RadialProgressIndicator extends StatelessWidget {
       : assert(radius > 0.0),
         super(key: key);
 
-  double get _clampedProgress =>
-      (!progress.isFinite) ? 1.0 : min(1.0, progress);
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final fg = color ?? theme.primaryColor;
 
-    return Container(
+    return Stack(
       alignment: Alignment.center,
-      width: radius * 2,
-      height: radius * 2,
-      child: CustomPaint(
-          painter: _CircleProgress(
-              _clampedProgress,
-              color ?? theme.primaryColor,
-              backgroundColor ?? theme.backgroundColor),
-          size: Size.fromRadius(radius)),
+      children: <Widget>[
+        Circle(radius: radius, color: backgroundColor ?? theme.backgroundColor),
+        (progress > 1.0 || progress <= 0.0)
+            ? Container(child: Icon(Icons.check, color: fg))
+            : CustomPaint(
+                painter: _Wedge(
+                    progress: !progress.isFinite ? 1.0 : progress, color: fg),
+                size: Size.fromRadius(radius))
+      ],
     );
   }
 }
