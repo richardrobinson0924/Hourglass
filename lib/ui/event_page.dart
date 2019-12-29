@@ -4,9 +4,8 @@ import 'dart:ui';
 
 import 'package:aeyrium_sensor/aeyrium_sensor.dart';
 import 'package:confetti/confetti.dart';
-import 'package:countdown/ui/fluid_view.dart';
+import 'package:countdown/ui/widgets/fluid_view.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../model/model.dart';
@@ -49,7 +48,7 @@ class _EventPageState extends State<EventPage> {
         .listen((sensorEvent) => setState(() => roll = sensorEvent.roll));
 
     if (event.isOver) {
-      Global.instance().notificationsManager.cancel(event.hashCode);
+      Model.instance().notificationsManager.cancel(event.hashCode);
     }
   }
 
@@ -196,7 +195,7 @@ class _EventPageState extends State<EventPage> {
                       child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 15.0),
                     child: Text(
-                      Global.instance().prose.toString(),
+                      Model.instance().configuration.prose,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 14.0,

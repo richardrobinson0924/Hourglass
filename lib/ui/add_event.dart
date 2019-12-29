@@ -1,17 +1,14 @@
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../model/model.dart';
 
 class AddEventPage extends StatefulWidget {
-  final Model model;
-
-  AddEventPage({Key key, this.model}) : super(key: key);
+  AddEventPage({Key key}) : super(key: key);
 
   @override
-  _AddEventPageState createState() => _AddEventPageState(model: model);
+  _AddEventPageState createState() => _AddEventPageState();
 }
 
 class _AddEventPageState extends State<AddEventPage> {
@@ -35,11 +32,7 @@ class _AddEventPageState extends State<AddEventPage> {
 
   Color eventColor = colors.first;
 
-  final Model model;
-
-  _AddEventPageState({Key key, this.model})
-      : assert(model != null),
-        super();
+  _AddEventPageState() : super();
 
   @override
   void initState() {
@@ -53,22 +46,23 @@ class _AddEventPageState extends State<AddEventPage> {
     super.dispose();
   }
 
-  final stepStates = [
-    MyStepState(
+  final stepStates = {
+    MyState.name: MyStepState(
         name: 'What\'s your Event?', isActive: true, state: StepState.editing),
-    MyStepState(name: 'When is it?', isActive: false, state: StepState.indexed),
-    MyStepState(
+    MyState.date: MyStepState(
+        name: 'When is it?', isActive: false, state: StepState.indexed),
+    MyState.color: MyStepState(
         name: 'Choose a Color', isActive: false, state: StepState.indexed)
-  ];
+  };
 
-  var currentStepIndex = 0;
+  var currentStep = MyState.name;
 
   @override
   Widget build(BuildContext context) {
     final eventNameStep = Step(
         title: const Text('Event Title'),
-        isActive: stepStates[0].isActive,
-        state: stepStates[0].state,
+        isActive: stepStates[MyState.name].isActive,
+        state: stepStates[MyState.name].state,
         content: TextFormField(
           focusNode: _focusNode,
           keyboardType: TextInputType.text,
@@ -86,8 +80,8 @@ class _AddEventPageState extends State<AddEventPage> {
 
     final eventTimeStep = Step(
         title: const Text('Event Time'),
-        isActive: stepStates[1].isActive,
-        state: stepStates[1].state,
+        isActive: stepStates[MyState.date].isActive,
+        state: stepStates[MyState.date].state,
         content: DateTimeField(
           readOnly: true,
           initialValue: DateTime(now.year, now.month, now.day, now.hour + 1),
@@ -114,11 +108,11 @@ class _AddEventPageState extends State<AddEventPage> {
 
     final eventColorStep = Step(
         title: const Text('Choose a Color'),
-        isActive: stepStates[2].isActive,
-        state: stepStates[2].state,
+        isActive: stepStates[MyState.color].isActive,
+        state: stepStates[MyState.color].state,
         content: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: colors.map<Widget>((color) {
+          children: colors.map((color) {
             final large = Circle(radius: 18.0, color: color);
             final mini = Circle(radius: 7.0, color: Colors.white);
 
@@ -132,61 +126,60 @@ class _AddEventPageState extends State<AddEventPage> {
           }).toList(),
         ));
 
-    final steps = [eventNameStep, eventTimeStep, eventColorStep];
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Add Event'),
-      ),
-      body: Container(
-        child: Form(
-            key: _formKey,
-            child: Stepper(
-              steps: steps,
-              type: StepperType.vertical,
-              currentStep: currentStepIndex,
-              onStepTapped: onStepTapped,
-              onStepContinue: _onContinueFunction(),
-              onStepCancel: () => Navigator.pop(context),
-            )),
+    return Theme(
+      data: Theme.of(context)
+          .copyWith(primaryColor: eventColor, accentColor: eventColor),
+      child: Scaffold(
+        appBar: AppBar(
+            title: Text('Add Event', style: TextStyle(color: Colors.white))),
+        body: Container(
+          child: Form(
+              key: _formKey,
+              child: Stepper(
+                steps: [eventNameStep, eventTimeStep, eventColorStep],
+                type: StepperType.vertical,
+                currentStep: currentStep.index,
+                onStepTapped: onStepTapped,
+                onStepContinue: _onContinueFunction(),
+                onStepCancel: () => Navigator.pop(context),
+              )),
+        ),
       ),
     );
   }
 
   void onStepTapped(int stepIndex) => setState(() {
-        currentStepIndex = stepIndex;
-        stepStates[currentStepIndex].isActive = true;
-        stepStates[currentStepIndex].state = StepState.editing;
+        currentStep = MyState.values[stepIndex];
+        stepStates[currentStep].isActive = true;
+        stepStates[currentStep].state = StepState.editing;
 
-        for (int i = 0; i < currentStepIndex; i += 1) {
+        for (int i = 0; i < currentStep.index; i += 1) {
           stepStates[i].isActive = false;
           stepStates[i].state = StepState.complete;
         }
 
-        for (int i = currentStepIndex + 1; i < stepStates.length; i += 1) {
+        for (int i = currentStep.index + 1; i < stepStates.length; i += 1) {
           stepStates[i].isActive = false;
           stepStates[i].state = StepState.indexed;
         }
       });
 
   VoidCallback _onContinueFunction() {
-    var goToNextPage = () => onStepTapped(currentStepIndex + 1);
+    var goToNextPage = () => onStepTapped(currentStep.index + 1);
 
-    switch (currentStepIndex) {
-      case 0:
+    switch (currentStep) {
+      case MyState.name:
         return _eventName.trim().isEmpty ? null : goToNextPage;
 
-      case 1:
+      case MyState.date:
         return goToNextPage;
 
-      case 2:
+      case MyState.color:
         return () {
-          model.addEvent(Event(
-              title: this._eventName,
-              end: this._eventTime,
-              color: this.eventColor));
+          Model.instance().addEvent(
+              Event(title: _eventName, end: _eventTime, color: eventColor));
 
-          Global.saveModel(model);
+          Model.instance().save();
           Navigator.pop(context);
         };
 
@@ -195,6 +188,8 @@ class _AddEventPageState extends State<AddEventPage> {
     }
   }
 }
+
+enum MyState { name, date, color }
 
 class MyStepState {
   final String name;

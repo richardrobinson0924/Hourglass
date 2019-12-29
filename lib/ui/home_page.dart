@@ -1,15 +1,12 @@
 import 'package:countdown/model/model.dart';
-import 'package:countdown/ui/radial_progress_indicator.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:countdown/ui/widgets/radial_progress_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:morpheus/page_routes/morpheus_page_route.dart';
 
 import 'event_page.dart';
 
 class EventsHome extends StatefulWidget {
-  final Model model;
-
-  EventsHome({Key key, @required this.model}) : super(key: key);
+  EventsHome({Key key}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _EventsHomeState();
@@ -42,7 +39,7 @@ class _EventsHomeState extends State<EventsHome> {
       );
 
   Widget buildRow(BuildContext context, int index) {
-    final event = widget.model.events[index];
+    final event = Model.instance().events[index];
 
     final transitionKey = GlobalKey();
     final listTileKey = Key(event.hashCode.toString());
@@ -51,18 +48,15 @@ class _EventsHomeState extends State<EventsHome> {
       content: Text('\'${event.title}\' removed.'),
       action: SnackBarAction(
         label: 'Undo',
-        onPressed: () {
-          setState(() => widget.model.addEvent(event, index: index));
-
-          Global.saveModel(widget.model);
-        },
+        onPressed: () =>
+            setState(() => Model.instance().addEvent(event, index: index)),
       ),
     );
 
     return Dismissible(
       onDismissed: (_) {
-        setState(() => widget.model.removeEvent(widget.model.events[index]));
-        Global.saveModel(widget.model);
+        setState(
+            () => Model.instance().removeEvent(Model.instance().events[index]));
 
         Scaffold.of(context).showSnackBar(snackBar);
       },
@@ -93,7 +87,7 @@ class _EventsHomeState extends State<EventsHome> {
                     parentKey: transitionKey,
                     builder: (context) => EventPage(
                         event: event,
-                        configuration: widget.model.configuration))),
+                        configuration: Model.instance().configuration))),
           ),
         ),
       ),
@@ -102,7 +96,7 @@ class _EventsHomeState extends State<EventsHome> {
 
   @override
   Widget build(BuildContext context) {
-    final list = widget.model.events;
+    final list = Model.instance().events;
 
     return list.isEmpty
         ? buildEmptyScreen()

@@ -11,6 +11,24 @@ extension DurationExt on Duration {
   double operator /(Duration other) => this.inSeconds / other.inSeconds;
 }
 
+extension NotifExt on FlutterLocalNotificationsPlugin {
+  void scheduleEvent(Event e) {
+    final details = NotificationDetails(
+        AndroidNotificationDetails(
+          'com.richardrobinson.countdown2',
+          'Hourglass',
+          'The countdown app',
+          importance: Importance.Max,
+          priority: Priority.High,
+        ),
+        null);
+
+    schedule(e.hashCode, 'Countdown to ${e.title} Over',
+        'The countdown to ${e.title} is now complete!', e.end, details,
+        payload: json.encode(e.toJson()));
+  }
+}
+
 extension ListExt<T> on List<T> {
   /// Reorders the elements in a list using the algorithm provided at
   /// <https://stackoverflow.com/questions/54162721/>
@@ -27,54 +45,51 @@ extension ListExt<T> on List<T> {
 }
 
 class Model {
-  final List<Event> _events;
-  final Configuration configuration;
+  List<Event> _events = [];
+  List<Event> get events => UnmodifiableListView<Event>(_events);
 
-  UnmodifiableListView<Event> get events =>
-      UnmodifiableListView<Event>(_events);
+  Configuration _configuration = Configuration();
+  Configuration get configuration => _configuration;
 
-  Model.empty()
-      : configuration = Configuration(),
-        _events = [];
+  final notificationsManager = FlutterLocalNotificationsPlugin();
 
-  Model.fromJson(Map<String, dynamic> map)
-      : assert(map != null),
-        configuration = Configuration.fromJson(map['configuration']),
-        _events = (map['events'] as List<dynamic>)
-            .map<Event>((rawJSON) => Event.fromJson(rawJSON))
-            .toList();
+  static final Model _instance = Model._internal();
+  Model._internal();
+  factory Model.instance() => _instance;
 
-  Map<String, dynamic> toJson() => {
-        'configuration': configuration.toJson(),
-        'events': _events.map<dynamic>((event) => event.toJson()).toList()
-      };
+  Map<String, dynamic> toJson() =>
+      {'configuration': configuration, 'events': _events};
+
+  void save() => SharedPreferences.getInstance().then(
+      (prefs) => prefs.setString('hourglassModel', json.encode(toJson())));
+
+  void setProperties(Map<String, dynamic> map) {
+    _events = map['events'].map((x) => Event.fromJson(x)).toList();
+    _configuration = Configuration.fromJson(map['configuration']);
+  }
 
   void addEvent(Event e, {int index}) {
-    assert(_events != null);
-
     _events.insert(index ?? _events.length, e);
 
-    if (configuration.shouldShowNotifications) {
-      Global.instance().notificationsManager.schedule(
-          e.hashCode,
-          'Countdown to ${e.title} Over',
-          'The countdown to ${e.title} is now complete!',
-          e.end,
-          Global.instance().notificationDetails,
-          payload: json.encode(e.toJson()));
+    if (configuration.shouldShowNotifications && !e.isOver) {
+      notificationsManager.scheduleEvent(e);
     }
+
+    save();
   }
 
   void removeEvent(Event e) {
     _events.remove(e);
 
-    Global.instance().notificationsManager.cancel(e.hashCode);
+    save();
+    notificationsManager.cancel(e.hashCode);
   }
 }
 
 class Configuration {
   bool shouldShowNotifications;
   bool shouldUseAltFont;
+  String prose = Prose.greeting;
 
   String get fontFamily => !shouldUseAltFont ? 'Inter' : 'OpenDyslexic';
 
@@ -91,34 +106,6 @@ class Configuration {
         'shouldShowNotifications': shouldShowNotifications,
         'shouldUseAltFont': shouldUseAltFont
       };
-}
-
-/// Global access singleton
-class Global {
-  static final Global _instance = Global._internal();
-  factory Global.instance() => _instance;
-  Global._internal();
-
-  String prose = Prose.greeting;
-
-  final notificationsManager = FlutterLocalNotificationsPlugin();
-
-  final notificationDetails = NotificationDetails(
-      AndroidNotificationDetails(
-        'com.richardrobinson.countdown2',
-        'Hourglass',
-        'The countdown app',
-        importance: Importance.Max,
-        priority: Priority.High,
-      ),
-      null);
-
-  static void saveModel(Model model) async {
-    if (model != null) {
-      var prefs = await SharedPreferences.getInstance();
-      prefs.setString('hourglassModel', json.encode(model.toJson()));
-    }
-  }
 }
 
 class Circle extends StatelessWidget {
@@ -148,12 +135,10 @@ class NormalizedDuration {
       [this.days = 0, this.hours = 0, this.minutes = 0, this.seconds = 0]);
 
   NormalizedDuration({@required Duration totalDuration})
-      : this.seconds =
-            totalDuration.inSeconds.remainder(Duration.secondsPerMinute),
-        this.minutes =
-            totalDuration.inMinutes.remainder(Duration.minutesPerHour),
-        this.hours = totalDuration.inHours.remainder(Duration.hoursPerDay),
-        this.days = totalDuration.inDays;
+      : seconds = totalDuration.inSeconds.remainder(Duration.secondsPerMinute),
+        minutes = totalDuration.inMinutes.remainder(Duration.minutesPerHour),
+        hours = totalDuration.inHours.remainder(Duration.hoursPerDay),
+        days = totalDuration.inDays;
 
   @override
   String toString() =>

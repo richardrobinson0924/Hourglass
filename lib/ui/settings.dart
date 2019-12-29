@@ -1,14 +1,11 @@
 import 'package:dynamic_theme/dynamic_theme.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../model/model.dart';
 
 class Settings extends StatefulWidget {
-  final Model model;
-
-  Settings({@required this.model});
+  Settings();
 
   @override
   State<StatefulWidget> createState() => _SettingsState();
@@ -41,19 +38,20 @@ class _SettingsState extends State<Settings> {
                 title: Text(
                   'Enable Notifications',
                 ),
-                value: widget.model.configuration.shouldShowNotifications,
+                value: Model.instance().configuration.shouldShowNotifications,
                 onChanged: (value) {
-                  setState(() => widget
-                      .model.configuration.shouldShowNotifications = value);
+                  setState(() => Model.instance()
+                      .configuration
+                      .shouldShowNotifications = value);
                 }),
             SwitchListTile(
                 title: Text(
                   'Use OpenDyslexic Font',
                 ),
-                value: widget.model.configuration.shouldUseAltFont,
+                value: Model.instance().configuration.shouldUseAltFont,
                 onChanged: (value) {
                   setState(() =>
-                      widget.model.configuration.shouldUseAltFont = value);
+                      Model.instance().configuration.shouldUseAltFont = value);
                 }),
             ListTile(
               title: Text(
@@ -62,7 +60,7 @@ class _SettingsState extends State<Settings> {
               trailing: DropdownButton<Brightness>(
                 value: DynamicTheme.of(context).brightness,
                 items: Brightness.values
-                    .map((color) => DropdownMenuItem<Brightness>(
+                    .map((color) => DropdownMenuItem(
                           value: color,
                           child: Text(enumStringOf(color)),
                         ))
