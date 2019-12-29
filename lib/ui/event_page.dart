@@ -4,18 +4,19 @@ import 'dart:ui';
 
 import 'package:aeyrium_sensor/aeyrium_sensor.dart';
 import 'package:confetti/confetti.dart';
-import 'package:countdown/fluid_view.dart';
+import 'package:countdown/ui/fluid_view.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'model.dart';
+import '../model/model.dart';
 
 class EventPage extends StatefulWidget {
   final Event event;
   final Configuration configuration;
 
-  EventPage({Key key, this.event, this.configuration}) : super(key: key);
+  EventPage({Key key, @required this.event, @required this.configuration})
+      : super(key: key);
 
   @override
   _EventPageState createState() =>
@@ -34,7 +35,8 @@ class _EventPageState extends State<EventPage> {
   final ConfettiController _confettiController =
       ConfettiController(duration: const Duration(seconds: 5));
 
-  _EventPageState({Key key, this.event, this.configuration}) : super();
+  _EventPageState({Key key, @required this.event, @required this.configuration})
+      : super();
 
   @override
   void initState() {

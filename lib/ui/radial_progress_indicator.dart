@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:countdown/model.dart';
+import 'package:countdown/model/model.dart';
 import 'package:flutter/material.dart';
 
 class _Wedge extends CustomPainter {

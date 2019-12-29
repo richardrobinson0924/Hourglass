@@ -1,6 +1,7 @@
+import 'dart:collection';
 import 'dart:convert';
 
-import 'package:countdown/prose.dart';
+import 'package:countdown/model/prose.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -10,34 +11,48 @@ extension DurationExt on Duration {
   double operator /(Duration other) => this.inSeconds / other.inSeconds;
 }
 
+extension ListExt<T> on List<T> {
+  /// Reorders the elements in a list using the algorithm provided at
+  /// <https://stackoverflow.com/questions/54162721/>
+  void move({@required int oldIndex, @required int newIndex}) {
+    assert(oldIndex >= 0 && oldIndex < this.length);
+    assert(newIndex >= 0);
+
+    if (newIndex > this.length) newIndex = this.length;
+    if (oldIndex < newIndex) newIndex--;
+
+    final item = this.removeAt(oldIndex);
+    this.insert(newIndex, item);
+  }
+}
+
 class Model {
-  final List<Event> events;
+  final List<Event> _events;
   final Configuration configuration;
+
+  UnmodifiableListView<Event> get events =>
+      UnmodifiableListView<Event>(_events);
 
   Model.empty()
       : configuration = Configuration(),
-        events = [];
+        _events = [];
 
   Model.fromJson(Map<String, dynamic> map)
       : assert(map != null),
         configuration = Configuration.fromJson(map['configuration']),
-        events = (map['events'] as List<dynamic>)
+        _events = (map['events'] as List<dynamic>)
             .map<Event>((rawJSON) => Event.fromJson(rawJSON))
             .toList();
 
   Map<String, dynamic> toJson() => {
         'configuration': configuration.toJson(),
-        'events': events.map<dynamic>((event) => event.toJson()).toList()
+        'events': _events.map<dynamic>((event) => event.toJson()).toList()
       };
 
-  int get numberOfEvents => events?.length ?? 0;
+  void addEvent(Event e, {int index}) {
+    assert(_events != null);
 
-  Event eventAt(int index) => events[index];
-
-  void addEvent(Event e) {
-    assert(events != null);
-
-    events.add(e);
+    _events.insert(index ?? _events.length, e);
 
     if (configuration.shouldShowNotifications) {
       Global.instance().notificationsManager.schedule(
@@ -51,18 +66,9 @@ class Model {
   }
 
   void removeEvent(Event e) {
-    events.remove(e);
+    _events.remove(e);
 
     Global.instance().notificationsManager.cancel(e.hashCode);
-  }
-
-  @override
-  String toString() {
-    // TODO: implement toString
-    var ret = 'Model{configuration=${configuration.toString()}, events=[\n';
-
-    events.forEach((event) => ret += '\t${event.toString()}, \n');
-    return '$ret]}';
   }
 }
 
@@ -93,7 +99,7 @@ class Global {
   factory Global.instance() => _instance;
   Global._internal();
 
-  String prose = Greeting.instance().toString();
+  String prose = Prose.greeting;
 
   final notificationsManager = FlutterLocalNotificationsPlugin();
 

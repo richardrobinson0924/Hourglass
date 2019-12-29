@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'model.dart';
+import '../model/model.dart';
 
 class AddEventPage extends StatefulWidget {
   final Model model;
@@ -169,7 +169,7 @@ class _AddEventPageState extends State<AddEventPage> {
         }
       });
 
-  void Function() _onContinueFunction() {
+  VoidCallback _onContinueFunction() {
     var goToNextPage = () => onStepTapped(currentStepIndex + 1);
 
     switch (currentStepIndex) {

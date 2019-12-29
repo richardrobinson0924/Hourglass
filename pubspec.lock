@@ -111,6 +111,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.7.4"
+  flutter_list_drag_and_drop:
+    dependency: "direct main"
+    description:
+      name: flutter_list_drag_and_drop
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.6"
   flutter_local_notifications:
     dependency: "direct main"
     description:
