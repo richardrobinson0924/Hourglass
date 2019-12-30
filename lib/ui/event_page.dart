@@ -39,7 +39,6 @@ class _EventPageState extends State<EventPage> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
 
     _timer = Timer.periodic(Duration(seconds: 1), update);
@@ -142,7 +141,7 @@ class _EventPageState extends State<EventPage> {
       centerTitle: true,
       elevation: 0.0,
       title: Text(
-        '${event.title}',
+        event.title,
         style: TextStyle(
             fontFamily: configuration.fontFamily,
             color: DynamicTheme.of(context).data.textColor),

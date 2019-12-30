@@ -12,6 +12,7 @@ extension DurationExt on Duration {
 }
 
 extension NotifExt on FlutterLocalNotificationsPlugin {
+  /// Schedule a notification at the end date of [e] with the id of [e.hashCode]
   void scheduleEvent(Event e) {
     final details = NotificationDetails(
         AndroidNotificationDetails(
@@ -33,10 +34,10 @@ extension ListExt<T> on List<T> {
   /// Reorders the elements in a list using the algorithm provided at
   /// <https://stackoverflow.com/questions/54162721/>
   void move({@required int oldIndex, @required int newIndex}) {
-    assert(oldIndex >= 0 && oldIndex < this.length);
+    assert(oldIndex >= 0 && oldIndex < length);
     assert(newIndex >= 0);
 
-    if (newIndex > this.length) newIndex = this.length;
+    if (newIndex > length) newIndex = length;
     if (oldIndex < newIndex) newIndex--;
 
     final item = this.removeAt(oldIndex);
@@ -44,8 +45,13 @@ extension ListExt<T> on List<T> {
   }
 }
 
+/// The data structure for Hourglass, comprising a [List] of [Event]s and the
+/// user's particular [Configuration]
 class Model {
   List<Event> _events = [];
+
+  /// Read-only access to this Model's list of [events]. To modify the list,
+  /// use [addEvent] or [removeEventAt].
   List<Event> get events => UnmodifiableListView<Event>(_events);
 
   Configuration _configuration = Configuration();
@@ -57,19 +63,26 @@ class Model {
   Model._internal();
   factory Model.instance() => _instance;
 
+  /// Serializes [this] into a JSON Map
   Map<String, dynamic> toJson() =>
       {'configuration': configuration, 'events': _events};
 
+  /// Saves [this] to persistent storage
   void save() => SharedPreferences.getInstance().then(
       (prefs) => prefs.setString('hourglassModel', json.encode(toJson())));
 
+  /// Deserialize the JSON [map] to [this] instance
   void setProperties(Map<String, dynamic> map) {
-    _events = map['events'].map((x) => Event.fromJson(x)).toList();
+    _events = map['events'].map<Event>((x) => Event.fromJson(x)).toList();
     _configuration = Configuration.fromJson(map['configuration']);
   }
 
-  void addEvent(Event e, {int index}) {
-    _events.insert(index ?? _events.length, e);
+  /// Inserts [e] at the index [at] in the list of [events]. If an index is not
+  /// specified, [e] is added to the end of the list.
+  ///
+  /// If appropriate, a notification for the event will also be scheduled.
+  void addEvent(Event e, {int at}) {
+    _events.insert(at ?? _events.length, e);
 
     if (configuration.shouldShowNotifications && !e.isOver) {
       notificationsManager.scheduleEvent(e);
@@ -78,8 +91,9 @@ class Model {
     save();
   }
 
-  void removeEvent(Event e) {
-    _events.remove(e);
+  /// Removes the event at [index], and cancels any pending notifications for it.
+  void removeEventAt(int index) {
+    final e = _events.removeAt(index);
 
     save();
     notificationsManager.cancel(e.hashCode);
@@ -87,20 +101,17 @@ class Model {
 }
 
 class Configuration {
-  bool shouldShowNotifications;
-  bool shouldUseAltFont;
+  bool shouldShowNotifications = true;
+  bool shouldUseAltFont = false;
   String prose = Prose.greeting;
 
   String get fontFamily => !shouldUseAltFont ? 'Inter' : 'OpenDyslexic';
 
-  Configuration()
-      : shouldUseAltFont = false,
-        shouldShowNotifications = true;
+  Configuration();
 
   Configuration.fromJson(Map<String, dynamic> json)
-      : shouldShowNotifications =
-            json['shouldShowNotifications'] as bool ?? true,
-        shouldUseAltFont = json['shoudUseAltFont'] as bool ?? false;
+      : shouldShowNotifications = json['shouldShowNotifications'] ?? true,
+        shouldUseAltFont = json['shoudUseAltFont'] ?? false;
 
   Map<String, dynamic> toJson() => {
         'shouldShowNotifications': shouldShowNotifications,
@@ -112,7 +123,7 @@ class Circle extends StatelessWidget {
   final double radius;
   final Color color;
 
-  Circle({Key key, @required this.radius, this.color}) : super(key: key);
+  const Circle({Key key, @required this.radius, this.color}) : super(key: key);
 
   @override
   Widget build(BuildContext context) => Container(
@@ -142,7 +153,7 @@ class NormalizedDuration {
 
   @override
   String toString() =>
-      <String, int>{'day': days, 'hour': hours, 'min': minutes, 'sec': seconds}
+      {'day': days, 'hour': hours, 'min': minutes, 'sec': seconds}
           .entries
           .map<String>((entry) => (entry.value == 1)
               ? '1 ${entry.key}'
@@ -150,18 +161,19 @@ class NormalizedDuration {
           .join(', ');
 }
 
-class Event implements Comparable<Event> {
+class Event {
   final String title;
   final DateTime start;
   final DateTime end;
   final Color color;
 
+  /// An event is over if the current time is equal to or after the end date
   bool get isOver => end.difference(DateTime.now()) <= Duration(seconds: 0);
 
   NormalizedDuration get timeRemaining =>
       NormalizedDuration(totalDuration: DateTime.now().difference(end).abs());
 
-  Event({@required this.title, @required this.end, @required this.color})
+  Event(this.title, {@required this.end, @required this.color})
       : start = DateTime.now(),
         assert(end != null),
         assert(color != null),
@@ -170,9 +182,9 @@ class Event implements Comparable<Event> {
   /// Deserialize an [Event] instance from a JSON map
   Event.fromJson(Map<String, dynamic> json)
       : title = json['title'],
-        color = Color(json['color'] as int),
-        start = DateTime.fromMillisecondsSinceEpoch(json['start'] as int),
-        end = DateTime.fromMillisecondsSinceEpoch(json['end'] as int);
+        color = Color(json['color']),
+        start = DateTime.fromMillisecondsSinceEpoch(json['start']),
+        end = DateTime.fromMillisecondsSinceEpoch(json['end']);
 
   /// Serialize this instance to a JSON map
   Map<String, dynamic> toJson() => {
@@ -181,9 +193,6 @@ class Event implements Comparable<Event> {
         'start': start.millisecondsSinceEpoch,
         'end': end.millisecondsSinceEpoch
       };
-
-  @override
-  int compareTo(Event other) => this.end.compareTo(other.end);
 
   @override
   int get hashCode => hashValues(title, start, end, color);
@@ -202,4 +211,7 @@ class Event implements Comparable<Event> {
 
 extension ThemeExtension on ThemeData {
   Color get textColor => this.textTheme.body1.color;
+
+  Color get appBackgroundColor =>
+      this.brightness == Brightness.dark ? Color(0xFF121212) : Colors.white;
 }

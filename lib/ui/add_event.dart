@@ -47,12 +47,9 @@ class _AddEventPageState extends State<AddEventPage> {
   }
 
   final stepStates = {
-    MyState.name: MyStepState(
-        name: 'What\'s your Event?', isActive: true, state: StepState.editing),
-    MyState.date: MyStepState(
-        name: 'When is it?', isActive: false, state: StepState.indexed),
-    MyState.color: MyStepState(
-        name: 'Choose a Color', isActive: false, state: StepState.indexed)
+    MyState.name: MyStepState('What\'s your Event?', state: StepState.editing),
+    MyState.date: MyStepState('When is it?', state: StepState.indexed),
+    MyState.color: MyStepState('Choose a Color', state: StepState.indexed)
   };
 
   var currentStep = MyState.name;
@@ -114,7 +111,7 @@ class _AddEventPageState extends State<AddEventPage> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: colors.map((color) {
             final large = Circle(radius: 18.0, color: color);
-            final mini = Circle(radius: 7.0, color: Colors.white);
+            final mini = const Circle(radius: 7.0, color: Colors.white);
 
             return InkResponse(
               onTap: () => setState(() => eventColor = color),
@@ -150,17 +147,14 @@ class _AddEventPageState extends State<AddEventPage> {
 
   void onStepTapped(int stepIndex) => setState(() {
         currentStep = MyState.values[stepIndex];
-        stepStates[currentStep].isActive = true;
         stepStates[currentStep].state = StepState.editing;
 
         for (int i = 0; i < currentStep.index; i += 1) {
-          stepStates[i].isActive = false;
-          stepStates[i].state = StepState.complete;
+          stepStates[MyState.values[i]].state = StepState.complete;
         }
 
         for (int i = currentStep.index + 1; i < stepStates.length; i += 1) {
-          stepStates[i].isActive = false;
-          stepStates[i].state = StepState.indexed;
+          stepStates[MyState.values[i]].state = StepState.indexed;
         }
       });
 
@@ -176,10 +170,9 @@ class _AddEventPageState extends State<AddEventPage> {
 
       case MyState.color:
         return () {
-          Model.instance().addEvent(
-              Event(title: _eventName, end: _eventTime, color: eventColor));
+          Model.instance()
+              .addEvent(Event(_eventName, end: _eventTime, color: eventColor));
 
-          Model.instance().save();
           Navigator.pop(context);
         };
 
@@ -193,9 +186,9 @@ enum MyState { name, date, color }
 
 class MyStepState {
   final String name;
-  bool isActive;
+  bool get isActive => state == StepState.editing;
+
   StepState state;
 
-  MyStepState(
-      {@required this.name, @required this.isActive, @required this.state});
+  MyStepState(this.name, {@required this.state});
 }
