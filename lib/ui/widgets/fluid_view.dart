@@ -113,11 +113,15 @@ class FluidView extends StatelessWidget {
         super(key: key);
 
   @override
-  Widget build(BuildContext context) => CustomPaint(
-      size: size ?? MediaQuery.of(context).size,
-      painter: _FluidViewPainter(
-          angle: angle,
-          progress: progress,
-          color: color,
-          radius: radius ?? Radius.zero));
+  Widget build(BuildContext context) => Semantics(
+        label: 'Progress indicator',
+        value: '${progress <= 0.0 ? 100 : progress * 100.0}% remaining',
+        child: CustomPaint(
+            size: size ?? MediaQuery.of(context).size,
+            painter: _FluidViewPainter(
+                angle: angle,
+                progress: progress,
+                color: color,
+                radius: radius ?? Radius.zero)),
+      );
 }

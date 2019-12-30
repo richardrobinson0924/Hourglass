@@ -167,8 +167,12 @@ class _EventPageState extends State<EventPage> {
                       Padding(
                         padding: EdgeInsets.only(left: 15.0),
                       ),
-                      Expanded(
-                        child: text,
+                      Semantics(
+                        label: 'Time remaining',
+                        value: event.timeRemaining.toString(),
+                        child: Expanded(
+                          child: text,
+                        ),
                       ),
                       Container(
                           height: 335.0,

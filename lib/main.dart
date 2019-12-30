@@ -38,6 +38,7 @@ class MyApp extends StatelessWidget {
         accentColor: Colors.teal,
       ),
       themedWidgetBuilder: (context, theme) => MaterialApp(
+        showSemanticsDebugger: true,
         debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',
         theme: theme,
@@ -151,10 +152,15 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           Spacer(flex: 4),
           Center(
             child: Theme.of(context).brightness == Brightness.dark
-                ? Image.asset('assets/void.png', width: 250)
+                ? Image.asset(
+                    'assets/void.png',
+                    width: 250,
+                    semanticLabel: 'No events.',
+                  )
                 : Image.asset(
                     'assets/empty_light.png',
                     width: 300.0,
+                    semanticLabel: 'No events.',
                   ),
           ),
           Padding(padding: EdgeInsets.only(top: 30.0)),
@@ -184,6 +190,10 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
       ),
     );
 
+    double getProgress() =>
+        DateTime.now().difference(event.end) /
+        event.start.difference(event.end);
+
     return Dismissible(
       direction: DismissDirection.endToStart,
       background: Container(
@@ -206,8 +216,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
             radius: 20.0,
             color: event.color,
             backgroundColor: event.color.withOpacity(0.25),
-            progress: DateTime.now().difference(event.end) /
-                event.start.difference(event.end),
+            progress: getProgress(),
           ),
           key: listTileKey,
           title: Text(event.title),

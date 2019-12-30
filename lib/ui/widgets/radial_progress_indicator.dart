@@ -57,17 +57,22 @@ class RadialProgressIndicator extends StatelessWidget {
     final theme = Theme.of(context);
     final fg = color ?? theme.primaryColor;
 
-    return Stack(
-      alignment: Alignment.center,
-      children: <Widget>[
-        Circle(radius: radius, color: backgroundColor ?? theme.backgroundColor),
-        (progress > 1.0 || progress <= 0.0)
-            ? Container(child: Icon(Icons.check, color: fg))
-            : CustomPaint(
-                painter: _Wedge(
-                    progress: !progress.isFinite ? 1.0 : progress, color: fg),
-                size: Size.fromRadius(radius))
-      ],
+    return Semantics(
+      label: 'Progress indicator',
+      value: '${progress <= 0.0 ? 0.0 : progress * 100.0}% remaining',
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          Circle(
+              radius: radius, color: backgroundColor ?? theme.backgroundColor),
+          (progress > 1.0 || progress <= 0.0)
+              ? Container(child: Icon(Icons.check, color: fg))
+              : CustomPaint(
+                  painter: _Wedge(
+                      progress: !progress.isFinite ? 1.0 : progress, color: fg),
+                  size: Size.fromRadius(radius))
+        ],
+      ),
     );
   }
 }
