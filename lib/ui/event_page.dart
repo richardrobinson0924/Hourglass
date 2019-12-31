@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:aeyrium_sensor/aeyrium_sensor.dart';
 import 'package:confetti/confetti.dart';
+import 'package:countdown/model/extensions.dart';
 import 'package:countdown/ui/widgets/fluid_view.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/material.dart';
@@ -12,19 +13,15 @@ import '../model/model.dart';
 
 class EventPage extends StatefulWidget {
   final Event event;
-  final Configuration configuration;
 
-  EventPage({Key key, @required this.event, @required this.configuration})
-      : super(key: key);
+  EventPage({Key key, @required this.event}) : super(key: key);
 
   @override
-  _EventPageState createState() =>
-      _EventPageState(event: event, configuration: configuration);
+  _EventPageState createState() => _EventPageState(event: event);
 }
 
 class _EventPageState extends State<EventPage> {
   final Event event;
-  final Configuration configuration;
 
   Timer _timer;
   double roll = 0.0;
@@ -34,8 +31,7 @@ class _EventPageState extends State<EventPage> {
   final ConfettiController _confettiController =
       ConfettiController(duration: const Duration(seconds: 5));
 
-  _EventPageState({Key key, @required this.event, @required this.configuration})
-      : super();
+  _EventPageState({Key key, @required this.event}) : super();
 
   @override
   void initState() {
@@ -72,24 +68,27 @@ class _EventPageState extends State<EventPage> {
     super.dispose();
   }
 
-  Widget makeTimePart(int part, String label) => Row(
+  Widget makeTimePart(TimeUnit unit) => Row(
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: <Widget>[
           Padding(padding: EdgeInsets.only(left: 15.0)),
-          Text(event.isOver ? '00' : part.toString().padLeft(2, '0'),
+          Text(
+              max(0, event.timeRemaining.combined[unit])
+                  .toString()
+                  .padLeft(2, '0'),
               style: TextStyle(
-                  fontFamily: configuration.fontFamily,
+                  fontFamily: Model.instance().fontFamily,
                   fontWeight: FontWeight.w700,
-                  fontSize: configuration.shouldUseAltFont ? 40.0 : 70.0,
+                  fontSize: Model.instance().shouldUseAltFont ? 50.0 : 70.0,
                   fontFeatures: [
                     FontFeature.tabularFigures(),
                     FontFeature.stylisticSet(1)
                   ])),
           Padding(padding: EdgeInsets.only(left: 15)),
-          Text(label,
+          Text(unit.name[0],
               style: TextStyle(
-                  fontFamily: configuration.fontFamily,
+                  fontFamily: Model.instance().fontFamily,
                   fontSize: 20.0,
                   color: Theme.of(context).textColor.withOpacity(0.5))),
         ],
@@ -97,13 +96,11 @@ class _EventPageState extends State<EventPage> {
 
   @override
   Widget build(BuildContext context) {
-    final timeRemaining = event.timeRemaining;
-
     Padding pad(double padding) =>
         Padding(padding: EdgeInsets.only(top: padding));
 
-    var ratio = DateTime.now().difference(event.start).inSeconds /
-        event.end.difference(event.start).inSeconds;
+    var ratio = DateTime.now().difference(event.start) /
+        event.end.difference(event.start);
 
     if (!ratio.isFinite) ratio = 1.0;
 
@@ -116,13 +113,13 @@ class _EventPageState extends State<EventPage> {
     final text = Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: <Widget>[
-        makeTimePart(timeRemaining.days, 'd'),
+        makeTimePart(TimeUnit.day),
         pad(5.0),
-        makeTimePart(timeRemaining.hours, 'h'),
+        makeTimePart(TimeUnit.hour),
         pad(5.0),
-        makeTimePart(timeRemaining.minutes, 'm'),
+        makeTimePart(TimeUnit.minute),
         pad(5.0),
-        makeTimePart(timeRemaining.seconds, 's'),
+        makeTimePart(TimeUnit.second),
       ],
     );
 
@@ -143,16 +140,14 @@ class _EventPageState extends State<EventPage> {
       title: Text(
         event.title,
         style: TextStyle(
-            fontFamily: configuration.fontFamily,
+            fontFamily: Model.instance().fontFamily,
             color: DynamicTheme.of(context).data.textColor),
       ),
       backgroundColor: Colors.transparent,
     );
 
     return Scaffold(
-        backgroundColor: DynamicTheme.of(context).brightness == Brightness.dark
-            ? Color(0xFF121212)
-            : Colors.white,
+        backgroundColor: Theme.of(context).appBackgroundColor,
         body: Stack(
           children: <Widget>[
             Center(
@@ -167,12 +162,11 @@ class _EventPageState extends State<EventPage> {
                       Padding(
                         padding: EdgeInsets.only(left: 15.0),
                       ),
-                      Semantics(
-                        label: 'Time remaining',
-                        value: event.timeRemaining.toString(),
-                        child: Expanded(
-                          child: text,
-                        ),
+                      Expanded(
+                        child: Semantics(
+                            label: 'Time remaining',
+                            value: event.timeRemaining.toString(),
+                            child: text),
                       ),
                       Container(
                           height: 335.0,
@@ -198,12 +192,12 @@ class _EventPageState extends State<EventPage> {
                       child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 15.0),
                     child: Text(
-                      Model.instance().configuration.prose,
+                      Model.instance().prose,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 14.0,
                           color: Theme.of(context).textColor.withOpacity(0.5),
-                          fontFamily: configuration.fontFamily),
+                          fontFamily: Model.instance().fontFamily),
                     ),
                   )),
                 ],

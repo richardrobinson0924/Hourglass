@@ -1,3 +1,5 @@
+import 'package:app_settings/app_settings.dart';
+import 'package:countdown/model/extensions.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,11 +14,6 @@ class Settings extends StatefulWidget {
 }
 
 class _SettingsState extends State<Settings> {
-  String enumStringOf(dynamic enumOption) {
-    final split = enumOption.toString().split('.')[1];
-    return split[0].toUpperCase() + split.substring(1);
-  }
-
   @override
   Widget build(BuildContext context) => Container(
         height: 300.0,
@@ -36,23 +33,11 @@ class _SettingsState extends State<Settings> {
             Padding(padding: EdgeInsets.only(top: 10.0)),
             SwitchListTile(
                 title: Text(
-                  'Enable Notifications',
-                ),
-                value: Model.instance().configuration.shouldShowNotifications,
-                onChanged: (value) {
-                  setState(() => Model.instance()
-                      .configuration
-                      .shouldShowNotifications = value);
-                }),
-            SwitchListTile(
-                title: Text(
                   'Use OpenDyslexic Font',
                 ),
-                value: Model.instance().configuration.shouldUseAltFont,
-                onChanged: (value) {
-                  setState(() =>
-                      Model.instance().configuration.shouldUseAltFont = value);
-                }),
+                value: Model.instance().shouldUseAltFont,
+                onChanged: (value) =>
+                    setState(() => Model.instance().shouldUseAltFont = value)),
             ListTile(
               title: Text(
                 'Color Theme',
@@ -81,9 +66,12 @@ class _SettingsState extends State<Settings> {
                 underline: Container(),
               ),
             ),
-            Padding(
-              padding: EdgeInsets.only(top: 20),
-            ),
+            ListTile(
+                contentPadding: EdgeInsets.only(right: 30.0, left: 16.0),
+                title: Text('Notification Settings'),
+                trailing: Icon(Icons.open_in_new),
+                onTap: () => AppSettings.openAppSettings()),
+            Padding(padding: EdgeInsets.only(top: 20)),
             Center(
               child: Text(
                 'Hourglass v1.0. Crafted with care in Canada.',

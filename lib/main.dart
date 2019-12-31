@@ -12,6 +12,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:morpheus/page_routes/morpheus_page_route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'model/extensions.dart';
 import 'model/model.dart';
 import 'ui/widgets/radial_progress_indicator.dart';
 
@@ -38,7 +39,6 @@ class MyApp extends StatelessWidget {
         accentColor: Colors.teal,
       ),
       themedWidgetBuilder: (context, theme) => MaterialApp(
-        showSemanticsDebugger: true,
         debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',
         theme: theme,
@@ -56,7 +56,7 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
+class _MyHomePageState extends State<MyHomePage> {
   static const quoteURL = 'http://quotes.rest/qod.json';
 
   var isLoading = true;
@@ -74,17 +74,15 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         MorpheusPageRoute(
             builder: (context) => EventPage(
                   event: event,
-                  configuration: Model.instance().configuration,
                 )));
   }
 
   @override
   void initState() {
-    WidgetsBinding.instance.addObserver(this);
     super.initState();
 
     Prose.fetchFrom([Quote.instance(), Joke.instance(), Joke2.instance()])
-        .then((prose) => Model.instance().configuration.prose = prose);
+        .then((prose) => Model.instance().prose = prose);
 
     Model.instance().notificationsManager.initialize(
         InitializationSettings(AndroidInitializationSettings('notification'),
@@ -103,25 +101,14 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
-    if (state == AppLifecycleState.paused) {
-      Model.instance().save();
-    }
-  }
-
-  @override
   void dispose() {
     _timer.cancel();
-    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   Widget get loadingView => Container();
 
   Future<void> showSettings(BuildContext context) async {
-    final oldNotificationsValue =
-        Model.instance().configuration.shouldShowNotifications;
-
     await showModalBottomSheet<void>(
         shape: RoundedRectangleBorder(
             side: BorderSide(),
@@ -133,14 +120,6 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
 
     final model = Model.instance();
     model.save();
-
-    if (oldNotificationsValue != model.configuration.shouldShowNotifications) {
-      model.notificationsManager.cancelAll();
-
-      if (model.configuration.shouldShowNotifications)
-        model.events
-            .forEach((e) => model.notificationsManager.scheduleEvent(e));
-    }
   }
 
   Widget buildEmptyScreen(BuildContext context) {
@@ -195,44 +174,41 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         event.start.difference(event.end);
 
     return Dismissible(
-      direction: DismissDirection.endToStart,
-      background: Container(
-        color: Colors.green.shade400,
-        alignment: Alignment.centerRight,
-        padding: EdgeInsets.only(right: 20.0),
-        child: Icon(Icons.delete, color: Colors.white),
-      ),
-      onDismissed: (_) {
-        setState(() => Model.instance().removeEventAt(index));
-
-        Scaffold.of(context).showSnackBar(snackBar);
-      },
-      key: listTileKey,
-      child: Material(
-        color: Theme.of(context).appBackgroundColor,
-        key: transitionKey,
-        child: ListTile(
-          leading: RadialProgressIndicator(
-            radius: 20.0,
-            color: event.color,
-            backgroundColor: event.color.withOpacity(0.25),
-            progress: getProgress(),
-          ),
-          key: listTileKey,
-          title: Text(event.title),
-          subtitle: Text(event.isOver
-              ? 'Event Completed'
-              : 'in ${event.timeRemaining.toString()}'),
-          onTap: () => Navigator.push(
+        direction: DismissDirection.endToStart,
+        background: Container(
+          color: Colors.green.shade400,
+          alignment: Alignment.centerRight,
+          padding: EdgeInsets.only(right: 20.0),
+          child: Icon(Icons.delete, color: Colors.white),
+        ),
+        onDismissed: (_) {
+          setState(() => Model.instance().removeEventAt(index));
+          Scaffold.of(context).showSnackBar(snackBar);
+        },
+        key: listTileKey,
+        child: Material(
+          color: Theme.of(context).appBackgroundColor,
+          key: transitionKey,
+          child: ListTile(
+            leading: RadialProgressIndicator(
+              radius: 20.0,
+              color: event.color,
+              backgroundColor: event.color.withOpacity(0.25),
+              progress: getProgress(),
+            ),
+            key: listTileKey,
+            title: Text(event.title),
+            subtitle: Text(event.isOver
+                ? 'Event Completed'
+                : 'in ${event.timeRemaining.combined.mapToString.join(', ')}'),
+            onTap: () => Navigator.push(
               context,
               MorpheusPageRoute(
                   parentKey: transitionKey,
-                  builder: (_) => EventPage(
-                      event: event,
-                      configuration: Model.instance().configuration))),
-        ),
-      ),
-    );
+                  builder: (_) => EventPage(event: event)),
+            ),
+          ),
+        ));
   }
 
   @override
@@ -242,7 +218,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     final themeData = Theme.of(context).copyWith(
         textTheme: Theme.of(context)
             .textTheme
-            .apply(fontFamily: Model.instance().configuration.fontFamily));
+            .apply(fontFamily: Model.instance().fontFamily));
 
     return Theme(
       data: themeData,
@@ -258,7 +234,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
             'Your Events',
             style: TextStyle(
                 color: Theme.of(context).textColor,
-                fontFamily: Model.instance().configuration.fontFamily),
+                fontFamily: Model.instance().fontFamily),
           ),
           actions: <Widget>[
             PopupMenuButton<int>(
