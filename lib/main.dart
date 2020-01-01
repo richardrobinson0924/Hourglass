@@ -67,14 +67,10 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<dynamic> onSelectNotification(String payload) async {
     final event = Event.fromJson(json.decode(payload));
 
-    Model.instance().notificationsManager.cancel(event.hashCode);
+    Model.instance().cfg.notificationsManager.cancel(event.hashCode);
 
     Navigator.push(
-        context,
-        MorpheusPageRoute(
-            builder: (context) => EventPage(
-                  event: event,
-                )));
+        context, MorpheusPageRoute(builder: (_) => EventPage(event: event)));
   }
 
   @override
@@ -82,9 +78,9 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
 
     Prose.fetchFrom([Quote.instance(), Joke.instance(), Joke2.instance()])
-        .then((prose) => Model.instance().prose = prose);
+        .then((prose) => Model.instance().cfg.prose = prose);
 
-    Model.instance().notificationsManager.initialize(
+    Model.instance().cfg.notificationsManager.initialize(
         InitializationSettings(AndroidInitializationSettings('notification'),
             IOSInitializationSettings()),
         onSelectNotification: onSelectNotification);
@@ -218,7 +214,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final themeData = Theme.of(context).copyWith(
         textTheme: Theme.of(context)
             .textTheme
-            .apply(fontFamily: Model.instance().fontFamily));
+            .apply(fontFamily: Model.instance().cfg.fontFamily));
 
     return Theme(
       data: themeData,
@@ -234,7 +230,7 @@ class _MyHomePageState extends State<MyHomePage> {
             'Your Events',
             style: TextStyle(
                 color: Theme.of(context).textColor,
-                fontFamily: Model.instance().fontFamily),
+                fontFamily: Model.instance().cfg.fontFamily),
           ),
           actions: <Widget>[
             PopupMenuButton<int>(

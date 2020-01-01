@@ -7,42 +7,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Model {
-  List<Event> _events = [];
-  List<Event> get events => UnmodifiableListView<Event>(_events);
-
-  bool _shouldUseAltFont = false;
-  bool get shouldUseAltFont => _shouldUseAltFont;
-  set shouldUseAltFont(bool value) {
-    _shouldUseAltFont = value;
-    save();
-  }
-
+class Configuration {
+  bool shouldUseAltFont = false;
   String get fontFamily => shouldUseAltFont ? 'OpenDyslexic' : 'Inter';
 
   String prose = Prose.greeting;
 
   final notificationsManager = FlutterLocalNotificationsPlugin();
 
+  Configuration.empty();
+
+  Configuration.fromJson(Map<String, dynamic> json)
+      : shouldUseAltFont = json['shouldUseAltFont'] ?? false;
+
+  Map<String, dynamic> toJson() => {'shouldUseAltFont': shouldUseAltFont};
+}
+
+class Model {
+  List<Event> _events = [];
+  List<Event> get events => UnmodifiableListView<Event>(_events);
+
+  Configuration cfg = Configuration.empty();
+
   static final Model _instance = Model._internal();
   Model._internal();
   factory Model.instance() => _instance;
 
-  Map<String, dynamic> toJson() =>
-      {'shouldUseAltFont': shouldUseAltFont, 'events': _events};
+  Map<String, dynamic> toJson() => {'configuration': cfg, 'events': _events};
 
   void save() => SharedPreferences.getInstance().then(
       (prefs) => prefs.setString('hourglassModel', json.encode(toJson())));
 
   void setProperties(Map<String, dynamic> map) {
     _events = map['events'].map<Event>((x) => Event.fromJson(x)).toList();
-    shouldUseAltFont = map['shouldUseAltFont'] ?? false;
+    cfg = Configuration.fromJson(map['configuration'] ?? {});
   }
 
   void addEvent(Event e, {int at}) {
     _events.insert(at ?? _events.length, e);
 
-    if (!e.isOver) notificationsManager.scheduleEvent(e);
+    if (!e.isOver) cfg.notificationsManager.scheduleEvent(e);
     save();
   }
 
@@ -50,7 +54,7 @@ class Model {
     final e = _events.removeAt(index);
 
     save();
-    notificationsManager.cancel(e.hashCode);
+    cfg.notificationsManager.cancel(e.hashCode);
   }
 }
 

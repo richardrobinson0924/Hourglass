@@ -35,9 +35,11 @@ class _SettingsState extends State<Settings> {
                 title: Text(
                   'Use OpenDyslexic Font',
                 ),
-                value: Model.instance().shouldUseAltFont,
-                onChanged: (value) =>
-                    setState(() => Model.instance().shouldUseAltFont = value)),
+                value: Model.instance().cfg.shouldUseAltFont,
+                onChanged: (value) {
+                  setState(() => Model.instance().cfg.shouldUseAltFont = value);
+                  Model.instance().save();
+                }),
             ListTile(
               title: Text(
                 'Color Theme',

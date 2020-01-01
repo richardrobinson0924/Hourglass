@@ -43,7 +43,7 @@ class _EventPageState extends State<EventPage> {
         .listen((sensorEvent) => setState(() => roll = sensorEvent.roll));
 
     if (event.isOver) {
-      Model.instance().notificationsManager.cancel(event.hashCode);
+      Model.instance().cfg.notificationsManager.cancel(event.hashCode);
     }
   }
 
@@ -78,9 +78,9 @@ class _EventPageState extends State<EventPage> {
                   .toString()
                   .padLeft(2, '0'),
               style: TextStyle(
-                  fontFamily: Model.instance().fontFamily,
+                  fontFamily: Model.instance().cfg.fontFamily,
                   fontWeight: FontWeight.w700,
-                  fontSize: Model.instance().shouldUseAltFont ? 50.0 : 70.0,
+                  fontSize: Model.instance().cfg.shouldUseAltFont ? 50.0 : 70.0,
                   fontFeatures: [
                     FontFeature.tabularFigures(),
                     FontFeature.stylisticSet(1)
@@ -88,7 +88,7 @@ class _EventPageState extends State<EventPage> {
           Padding(padding: EdgeInsets.only(left: 15)),
           Text(unit.name[0],
               style: TextStyle(
-                  fontFamily: Model.instance().fontFamily,
+                  fontFamily: Model.instance().cfg.fontFamily,
                   fontSize: 20.0,
                   color: Theme.of(context).textColor.withOpacity(0.5))),
         ],
@@ -140,7 +140,7 @@ class _EventPageState extends State<EventPage> {
       title: Text(
         event.title,
         style: TextStyle(
-            fontFamily: Model.instance().fontFamily,
+            fontFamily: Model.instance().cfg.fontFamily,
             color: DynamicTheme.of(context).data.textColor),
       ),
       backgroundColor: Colors.transparent,
@@ -192,12 +192,12 @@ class _EventPageState extends State<EventPage> {
                       child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 15.0),
                     child: Text(
-                      Model.instance().prose,
+                      Model.instance().cfg.prose,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 14.0,
                           color: Theme.of(context).textColor.withOpacity(0.5),
-                          fontFamily: Model.instance().fontFamily),
+                          fontFamily: Model.instance().cfg.fontFamily),
                     ),
                   )),
                 ],
