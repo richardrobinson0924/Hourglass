@@ -1,10 +1,19 @@
 package com.richardrobinson.countdown2
 
+import android.app.Activity
+import android.view.*
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
+import android.content.res.XmlResourceParser
+import android.graphics.drawable.Drawable
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
+import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
 
 class EventWidgetService : RemoteViewsService() {
@@ -32,9 +41,13 @@ class EventRemoteViewsFactory(private val context: Context, intent: Intent) : Re
 	override fun getViewAt(position: Int): RemoteViews {
 		return RemoteViews(context.packageName, R.layout.widget_item).apply {
 			val event = MiniModel.events[position]
-			val remaining = event.secondsRemaining.inSeconds / (event.end.epochSecond - event.start.epochSecond).toDouble()
 
-			setProgressBar(R.id.progressBar, 100, (remaining * 100).toInt(), false)
+			setProgressBar(
+					R.id.progressBar,
+					(event.end.epochSecond - event.start.epochSecond).toInt(),
+					event.secondsRemaining.toInt(unit = TimeUnit.SECONDS),
+					false
+			)
 
 			setTextViewText(R.id.item_text, event.title)
 
