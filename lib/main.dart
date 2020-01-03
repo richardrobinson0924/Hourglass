@@ -109,8 +109,8 @@ class _MyHomePageState extends State<MyHomePage> {
         shape: RoundedRectangleBorder(
             side: BorderSide(),
             borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(15.0),
-                topRight: Radius.circular(15.0))),
+                topLeft: Radius.circular(10.0),
+                topRight: Radius.circular(10.0))),
         context: context,
         builder: (_) => Settings());
 
@@ -196,7 +196,7 @@ class _MyHomePageState extends State<MyHomePage> {
             title: Text(event.title),
             subtitle: Text(event.isOver
                 ? 'Event Completed'
-                : 'in ${event.timeRemaining.combined.mapToString.join(', ')}'),
+                : 'in ${event.timeRemaining.compounded.toString(abbreviated: true)}'),
             onTap: () => Navigator.push(
               context,
               MorpheusPageRoute(

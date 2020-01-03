@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="add_widget">Add widget</string>
+    <string name="hi">hi</string>
+    <string name="app_widget">app widget</string>
+    <string name="empty_view_text">hi</string>
+</resources>

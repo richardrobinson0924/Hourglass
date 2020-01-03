@@ -11,23 +11,38 @@ String enumStringOf(dynamic enumOption, {bool titleCase = true}) {
   return (titleCase ? split[0].toUpperCase() : split[0]) + split.substring(1);
 }
 
-enum TimeUnit { day, hour, minute, second }
+class Unit {
+  static const second = Unit._('sec', 'second');
+  static const minute = Unit._('min', 'minute');
+  static const hour = Unit._('hr', 'hour');
+  static const day = Unit._('day', 'day');
 
-extension TimeUnitExt on TimeUnit {
-  String get name {
-    switch (this) {
-      case TimeUnit.day:
-        return 'day';
-      case TimeUnit.hour:
-        return 'hour';
-      case TimeUnit.minute:
-        return 'min';
-      case TimeUnit.second:
-        return 'sec';
-    }
+  final String abbreviated;
+  final String full;
 
-    return '';
-  }
+  const Unit._(this.abbreviated, this.full);
+}
+
+class CompoundedDuration {
+  final Map<Unit, int> _map;
+
+  CompoundedDuration.converted(Duration other)
+      : _map = {
+          Unit.day: other.inDays,
+          Unit.hour: other.inHours.remainder(24),
+          Unit.minute: other.inMinutes.remainder(60),
+          Unit.second: other.inSeconds.remainder(60)
+        };
+
+  int operator [](Unit unit) => _map[unit];
+
+  @override
+  String toString({bool abbreviated = false}) => _map.entries.map((entry) {
+        final suffix = (entry.value == 1) ? '' : 's';
+        final unit = abbreviated ? entry.key.abbreviated : entry.key.full;
+
+        return '${entry.value} $unit$suffix';
+      }).join(', ');
 }
 
 extension DurationExt on Duration {
@@ -68,20 +83,8 @@ extension ListExt<T> on List<T> {
   }
 }
 
-extension E2 on Map<TimeUnit, int> {
-  Iterable<String> get mapToString => this.entries.map((entry) {
-        final suffix = entry.value == 1 ? '' : 's';
-        return '${entry.value} ${entry.key.name}$suffix';
-      });
-}
-
 extension E on Duration {
-  Map<TimeUnit, int> get combined => {
-        TimeUnit.day: inDays,
-        TimeUnit.hour: inHours.remainder(Duration.hoursPerDay),
-        TimeUnit.minute: inMinutes.remainder(Duration.minutesPerHour),
-        TimeUnit.second: inSeconds.remainder(Duration.secondsPerMinute)
-      };
+  CompoundedDuration get compounded => CompoundedDuration.converted(this);
 }
 
 extension ThemeExtension on ThemeData {

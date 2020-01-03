@@ -68,13 +68,13 @@ class _EventPageState extends State<EventPage> {
     super.dispose();
   }
 
-  Widget makeTimePart(TimeUnit unit) => Row(
+  Widget makeTimePart(Unit unit) => Row(
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: <Widget>[
           Padding(padding: EdgeInsets.only(left: 15.0)),
           Text(
-              max(0, event.timeRemaining.combined[unit])
+              max(0, event.timeRemaining.compounded[unit])
                   .toString()
                   .padLeft(2, '0'),
               style: TextStyle(
@@ -86,7 +86,7 @@ class _EventPageState extends State<EventPage> {
                     FontFeature.stylisticSet(1)
                   ])),
           Padding(padding: EdgeInsets.only(left: 15)),
-          Text(unit.name[0],
+          Text(unit.full[0],
               style: TextStyle(
                   fontFamily: Model.instance().cfg.fontFamily,
                   fontSize: 20.0,
@@ -113,13 +113,13 @@ class _EventPageState extends State<EventPage> {
     final text = Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: <Widget>[
-        makeTimePart(TimeUnit.day),
+        makeTimePart(Unit.day),
         pad(5.0),
-        makeTimePart(TimeUnit.hour),
+        makeTimePart(Unit.hour),
         pad(5.0),
-        makeTimePart(TimeUnit.minute),
+        makeTimePart(Unit.minute),
         pad(5.0),
-        makeTimePart(TimeUnit.second),
+        makeTimePart(Unit.second),
       ],
     );
 
