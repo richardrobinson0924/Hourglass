@@ -15,8 +15,12 @@ data class Event(val title: String, val end: Instant, val color: Color, val star
         get() = Instant.now().epochSecond >= end.epochSecond
 
     @ExperimentalTime
-    val secondsRemaining: Duration
+    val timeRemaining: Duration
         get() = if (isOver) (0).seconds else (end.epochSecond - Instant.now().epochSecond).seconds
+
+    @ExperimentalTime
+    val totalDuration: Duration
+        get() = (end.epochSecond - start.epochSecond).seconds
     
     val id: Long
         get() = start.hashCode().toLong()

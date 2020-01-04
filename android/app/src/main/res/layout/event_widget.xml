@@ -7,18 +7,7 @@
     <ListView
         android:id="@+id/listView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-    </ListView>
-
-    <TextView
-        android:id="@+id/emptyView"
-        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:background="@drawable/example_appwidget_preview"
-        android:textColor="#ffffff"
-        android:textStyle="bold"
-        android:text="@string/empty_view_text"
-        android:textSize="20sp" />
+        android:scrollbars="none" />
 
 </LinearLayout>

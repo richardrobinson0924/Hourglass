@@ -57,6 +57,7 @@
                 <action android:name="com.richardrobinson.countdown2.action.UPDATE_TIME"/>
             </intent-filter>
         </service>
+        <service android:name=".LaunchService" />
     </application>
 
 </manifest>

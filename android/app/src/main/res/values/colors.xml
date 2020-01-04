@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="tealFG">#009688</color>
+    <color name="tealBG">#B2DFDB</color>
+    <color name="deepPurpleFG">#7C4DFF</color>
+    <color name="deepPurpleBG">#D1C4E9</color>
+    <color name="indigoFG">#3F51B5</color>
+    <color name="indigoBG">#C5CAE9</color>
+    <color name="orangeFG">#FF9800</color>
+    <color name="redFG">#FF6978</color>
+</resources>

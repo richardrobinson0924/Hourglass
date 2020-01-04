@@ -13,7 +13,6 @@ import android.os.SystemClock
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
 
-
 /**
  * Implementation of App Widget functionality.
  */
@@ -59,8 +58,6 @@ class EventWidget : AppWidgetProvider() {
 
     }
 
-    private lateinit var pending: PendingIntent
-
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         appWidgetIds.forEach {
             val intent = Intent(context, EventWidgetService::class.java).apply {
@@ -68,10 +65,15 @@ class EventWidget : AppWidgetProvider() {
                 data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
             }
 
+            val pendingIntent: PendingIntent = Intent(context, MainActivity::class.java).let { i ->
+                PendingIntent.getActivity(context, 0, i, 0)
+            }
+
             val rv = RemoteViews(context.packageName, R.layout.event_widget).apply {
                 setRemoteAdapter(R.id.listView, intent)
-                setEmptyView(R.id.listView, R.id.emptyView)
+                setOnClickPendingIntent(R.id.listView, pendingIntent)
             }
+
 
             appWidgetManager.updateAppWidget(it, rv)
         }
@@ -106,12 +108,15 @@ class EventWidget : AppWidgetProvider() {
     override fun onDisabled(context: Context) {
         // Enter relevant functionality for when the last widget is disabled
     }
+
+    companion object {
+        val EXTRA_ID: String = "com.richardrobinson.countdown2.appwidget.ID"
+    }
 }
 
 fun update(context: Context) {
     val rv = RemoteViews(context.packageName, R.layout.event_widget).apply {
         setRemoteAdapter(R.id.listView, Intent(context, EventWidgetService::class.java))
-        setEmptyView(R.id.listView, R.id.emptyView)
     }
 
     val component = ComponentName(context, EventWidget::class.java)
