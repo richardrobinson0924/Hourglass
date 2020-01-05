@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.richardrobinson.countdown2">
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -9,10 +10,16 @@
     <application
         android:name="io.flutter.app.FlutterApplication"
         android:icon="@mipmap/ic_launcher"
-        android:label="Hourglass">
+        android:label="Hourglass"
+        tools:ignore="GoogleAppIndexingWarning">
         <receiver android:name=".EventWidget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="com.richardrobinson.countdown2.appwidget.openevent" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
 
             <meta-data
@@ -49,15 +56,12 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <service android:name=".EventWidgetService"
-            android:permission="android.permission.BIND_REMOTEVIEWS"/>
-        <service android:name=".EventWidget$UpdateTimeService">
+
             <intent-filter>
-                <action android:name="com.richardrobinson.countdown2.action.UPDATE_TIME"/>
+                <action android:name="com.richardrobinson.countdown2.appwidget.openevent" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
-        </service>
-        <service android:name=".LaunchService" />
+        </activity>
     </application>
 
 </manifest>

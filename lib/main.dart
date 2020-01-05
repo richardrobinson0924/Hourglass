@@ -18,6 +18,9 @@ import 'ui/widgets/radial_progress_indicator.dart';
 
 void main() => runApp(MyApp());
 
+const platform =
+    const MethodChannel('com.richardrobinson.countdown2.shared.data');
+
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
@@ -57,8 +60,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  static const quoteURL = 'http://quotes.rest/qod.json';
-
   var isLoading = true;
   Timer _timer;
 
@@ -77,6 +78,24 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
+    platform.setMethodCallHandler((call) {
+      print('here');
+
+      if (call.method == "update") {
+        final data = call.arguments;
+
+        if (data != null && data >= 0) {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      EventPage(event: Model.instance().events[data])));
+        }
+      }
+
+      return null;
+    });
+
     Prose.fetchFrom([Quote.instance(), Joke.instance(), Joke2.instance()])
         .then((prose) => Model.instance().cfg.prose = prose);
 
@@ -85,15 +104,30 @@ class _MyHomePageState extends State<MyHomePage> {
             IOSInitializationSettings()),
         onSelectNotification: onSelectNotification);
 
+    _timer = Timer.periodic(Duration(seconds: 1), (_) => setState(() {}));
+
     SharedPreferences.getInstance().then((prefs) {
       final raw = prefs.getString('hourglassModel');
       setState(() {
         if (raw != null) Model.instance().setProperties(json.decode(raw));
         isLoading = false;
       });
-    });
 
-    _timer = Timer.periodic(Duration(seconds: 1), (_) => setState(() {}));
+      goToEventPageIfLaunchedFromAppWidget();
+    });
+  }
+
+  void goToEventPageIfLaunchedFromAppWidget() async {
+    var data = await platform.invokeMethod<int>('getEventID');
+
+    print(data.toString() + "\n\n\n");
+
+    if (data != null && data >= 0) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => EventPage(event: Model.instance().events[data])));
+    }
   }
 
   @override

@@ -1,7 +1,10 @@
 package com.richardrobinson.countdown2
 
+import android.annotation.TargetApi
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.os.Build
+import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import java.time.Instant
@@ -10,7 +13,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
 
-data class Event(val title: String, val end: Instant, val color: Color, val start: Instant = Instant.now()) {
+data class Event(val title: String, val end: Instant, val index: Int, val start: Instant = Instant.now()) {
     val isOver: Boolean
         get() = Instant.now().epochSecond >= end.epochSecond
 
@@ -18,49 +21,45 @@ data class Event(val title: String, val end: Instant, val color: Color, val star
     val timeRemaining: Duration
         get() = if (isOver) (0).seconds else (end.epochSecond - Instant.now().epochSecond).seconds
 
-    @ExperimentalTime
-    val totalDuration: Duration
-        get() = (end.epochSecond - start.epochSecond).seconds
-    
-    val id: Long
-        get() = start.hashCode().toLong()
-
     companion object {
-        fun deserialize(json: JsonElement): Event {
+        private fun deserialize(json: JsonElement, index: Int): Event {
             val obj = json.asJsonObject
             return Event(
                     title = obj["title"].asString,
                     start = Instant.ofEpochMilli(obj["start"].asLong),
                     end = Instant.ofEpochMilli(obj["end"].asLong),
-                    color = Color.valueOf(obj["color"].asInt)
+                    index = index
             )
         }
-    }
 
-}
+        fun parseEvent(prefs: SharedPreferences): Event? {
+            val flutterPrefix = "flutter."
 
-object MiniModel {
-    var events: List<Event> = ArrayList()
-    var isDark: Boolean = false
+            val model = prefs.getString("${flutterPrefix}hourglassModel", "").let {
+                JsonParser.parseString(it ?: "{}").asJsonObject
+            }
 
-    fun initialize(prefs: SharedPreferences) {
-        val flutterPrefix = "flutter."
+            val index = model.get("eventIndex")?.asInt ?: 0
+            val events =  model.getAsJsonArray("events") ?: null
 
-        this.isDark = prefs.getBoolean("${flutterPrefix}isDark", false)
-        val modelPrefs = prefs.getString("${flutterPrefix}hourglassModel", "")
+            if (events != null && index >= 0 && index < events.size()) {
+                return deserialize(events[index], index)
+            }
 
-        if (!modelPrefs.isNullOrBlank()) {
-            this.events = JsonParser.parseString(modelPrefs)
-                    .asJsonObject
-                    .getAsJsonArray("events")
-                    .map { Event.deserialize(json = it) }
+            return null
         }
     }
+
 }
 
 
+@ExperimentalTime
+val Duration.days: Int
+    get() = inDays.toInt()
 
-
+@ExperimentalTime
+val Duration.hours: Int
+    get() = inHours.toInt().rem(24)
 
 
 

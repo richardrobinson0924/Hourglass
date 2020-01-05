@@ -9,5 +9,6 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout
     <dimen name="circleSize">50dp</dimen>
     <dimen name="margin">-15dp</dimen>
     <dimen name="scale">4.0</dimen>
+    <dimen name="textSize">43sp</dimen>
 
 </resources>

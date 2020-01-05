@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:aeyrium_sensor/aeyrium_sensor.dart';
 import 'package:confetti/confetti.dart';
+import 'package:countdown/main.dart';
 import 'package:countdown/model/extensions.dart';
 import 'package:countdown/ui/widgets/fluid_view.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
@@ -22,16 +23,23 @@ class EventPage extends StatefulWidget {
 
 class _EventPageState extends State<EventPage> {
   final Event event;
+  final int index;
 
   Timer _timer;
   double roll = 0.0;
+
+  ValueNotifier<bool> _isChecked;
 
   StreamSubscription<SensorEvent> _streamSubscriptions;
 
   final ConfettiController _confettiController =
       ConfettiController(duration: const Duration(seconds: 5));
 
-  _EventPageState({Key key, @required this.event}) : super();
+  final GlobalKey _menuKey = GlobalKey();
+
+  _EventPageState({Key key, @required this.event})
+      : index = Model.instance().events.indexOf(event),
+        super();
 
   @override
   void initState() {
@@ -45,6 +53,8 @@ class _EventPageState extends State<EventPage> {
     if (event.isOver) {
       Model.instance().cfg.notificationsManager.cancel(event.hashCode);
     }
+
+    _isChecked = ValueNotifier(Model.instance().widgetIndex == index);
   }
 
   void update(Timer timer) {
@@ -144,6 +154,28 @@ class _EventPageState extends State<EventPage> {
             color: DynamicTheme.of(context).data.textColor),
       ),
       backgroundColor: Colors.transparent,
+      actions: <Widget>[
+        PopupMenuButton(
+            key: _menuKey,
+            onSelected: (_) {},
+            itemBuilder: (_) => [
+                  PopupMenuItem<bool>(
+                    child: StatefulBuilder(
+                      builder: (context, _setState) => CheckboxListTile(
+                        value: Model.instance().widgetIndex == index,
+                        onChanged: (newValue) {
+                          _setState(() => Model.instance().widgetIndex =
+                              newValue ? index : 0);
+
+                          platform.invokeMethod('updateWidget');
+                        },
+                        title: Text('Use Widget'),
+                      ),
+                    ),
+                  )
+                ],
+            icon: Icon(Icons.more_vert))
+      ],
     );
 
     return Scaffold(

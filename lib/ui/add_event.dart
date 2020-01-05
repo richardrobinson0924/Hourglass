@@ -57,7 +57,7 @@ class _AddEventPageState extends State<AddEventPage> {
   @override
   Widget build(BuildContext context) {
     final eventNameStep = Step(
-        title: const Text('Event Title'),
+        title: Text(stepStates[MyState.name].name),
         isActive: stepStates[MyState.name].isActive,
         state: stepStates[MyState.name].state,
         content: TextFormField(
@@ -66,8 +66,8 @@ class _AddEventPageState extends State<AddEventPage> {
           onChanged: (value) => setState(() => _eventName = value),
           onSaved: (value) => _eventName = value,
           decoration: InputDecoration(
-            labelText: 'Label text',
-            hintText: 'Hint text',
+            labelText: 'Event Title',
+            hintText: 'My Birthday',
             labelStyle: TextStyle(decorationStyle: TextDecorationStyle.solid),
           ),
         ));
@@ -76,7 +76,7 @@ class _AddEventPageState extends State<AddEventPage> {
     final now = DateTime.now();
 
     final eventTimeStep = Step(
-        title: const Text('Event Time'),
+        title: Text(stepStates[MyState.date].name),
         isActive: stepStates[MyState.date].isActive,
         state: stepStates[MyState.date].state,
         content: DateTimeField(
@@ -104,7 +104,7 @@ class _AddEventPageState extends State<AddEventPage> {
         ));
 
     final eventColorStep = Step(
-        title: const Text('Choose a Color'),
+        title: Text(stepStates[MyState.color].name),
         isActive: stepStates[MyState.color].isActive,
         state: stepStates[MyState.color].state,
         content: Row(

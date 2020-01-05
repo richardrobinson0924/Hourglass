@@ -6,4 +6,6 @@
     <string name="app_widget">app widget</string>
     <string name="empty_view_text">hi</string>
     <string name="textview">TextView</string>
+    <string name="d">days</string>
+    <string name="h">hrs</string>
 </resources>

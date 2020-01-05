@@ -1,133 +1,68 @@
 package com.richardrobinson.countdown2
 
-import android.app.AlarmManager
+import android.annotation.TargetApi
 import android.app.PendingIntent
-import android.app.Service
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.*
-import android.net.Uri
+import android.content.Context
+import android.content.Intent
 import android.os.Build
-import android.os.IBinder
-import android.os.SystemClock
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
+import kotlin.time.ExperimentalTime
 
 /**
  * Implementation of App Widget functionality.
  */
-@RequiresApi(Build.VERSION_CODES.CUPCAKE)
+@TargetApi(Build.VERSION_CODES.CUPCAKE)
+@ExperimentalTime
 class EventWidget : AppWidgetProvider() {
 
-    class UpdateTimeService : Service() {
-
-        private val intentFilter = IntentFilter().apply {
-            addAction(Intent.ACTION_TIME_TICK)
-            addAction(Intent.ACTION_TIME_CHANGED)
-            addAction(Intent.ACTION_TIMEZONE_CHANGED)
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.hasExtra(WIDGET_IDS_KEY)) {
+            val ids: IntArray? = intent.extras!!.getIntArray(WIDGET_IDS_KEY)
+            if (ids != null) {
+                onUpdate(context, AppWidgetManager.getInstance(context), ids)
+            }
         }
 
-        private val receiver = object: BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent?) = update(context)
-        }
-
-
-        override fun onCreate() {
-            super.onCreate()
-            registerReceiver(receiver, intentFilter)
-        }
-
-        override fun onBind(intent: Intent?): IBinder? = null
-
-        override fun onDestroy() {
-            super.onDestroy()
-            unregisterReceiver(receiver)
-        }
-
-        override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-            super.onStartCommand(intent, flags, startId)
-
-            if (intent != null && UPDATE_TIME == intent.action) update(this)
-
-            return START_STICKY
-        }
-
-        companion object {
-            const val UPDATE_TIME = "com.richardrobinson.countdown2.action.UPDATE_TIME"
-        }
-
+        super.onReceive(context, intent)
     }
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        appWidgetIds.forEach {
-            val intent = Intent(context, EventWidgetService::class.java).apply {
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, it)
-                data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+        appWidgetIds.forEach { appWidgetId ->
+            val event = Event.parseEvent(context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE))
+
+            val pendingIntent = Intent(context, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                action = OPEN_EVENT_INTENT
+                putExtra(EXTRA_ID, event?.index ?: 0)
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            }.let {
+                intent -> PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
             }
 
-            val pendingIntent: PendingIntent = Intent(context, MainActivity::class.java).let { i ->
-                PendingIntent.getActivity(context, 0, i, 0)
+            val views: RemoteViews = RemoteViews(context.packageName, R.layout.widget).apply {
+                setOnClickPendingIntent(R.id.widget, pendingIntent)
+
+                if (event != null) {
+                    setTextViewText(R.id.title2, event.title)
+
+                    setTextViewText(R.id.days, event.timeRemaining.days.toString().padStart(2, '0'))
+                    setTextViewText(R.id.hours, event.timeRemaining.hours.toString().padStart(2, '0'))
+                }
             }
 
-            val rv = RemoteViews(context.packageName, R.layout.event_widget).apply {
-                setRemoteAdapter(R.id.listView, intent)
-                setOnClickPendingIntent(R.id.listView, pendingIntent)
-            }
-
-
-            appWidgetManager.updateAppWidget(it, rv)
+            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
-
-        update(context)
-
-        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.listView)
-
-        super.onUpdate(context, appWidgetManager, appWidgetIds)
     }
 
-    override fun onEnabled(context: Context) {
-        // Enter relevant functionality for when the first widget is created
-        super.onEnabled(context)
-        val pending = PendingIntent.getService(context, 0, Intent(context, UpdateTimeService::class.java), 0)
-
-        val interval: Long = 1000 * 60
-
-        (context.getSystemService(Context.ALARM_SERVICE) as AlarmManager).apply {
-            cancel(pending)
-            setRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime(), interval, pending)
-        }
-
-        update(context)
-    }
-
-	override fun onReceive(context: Context, intent: Intent?) {
-		super.onReceive(context, intent)
-		update(context)
-	}
-
-    override fun onDisabled(context: Context) {
-        // Enter relevant functionality for when the last widget is disabled
-    }
 
     companion object {
-        val EXTRA_ID: String = "com.richardrobinson.countdown2.appwidget.ID"
+        const val OPEN_EVENT_INTENT = "com.richardrobinson.countdown2.appwidget.openevent"
+        const val EXTRA_ID = "com.richardrobinson.countdown2.appwidget.ID"
+        const val WIDGET_IDS_KEY = "mywidgetproviderwidgetids"
+
+        private const val PREFS_NAME = "FlutterSharedPreferences"
     }
-}
-
-fun update(context: Context) {
-    val rv = RemoteViews(context.packageName, R.layout.event_widget).apply {
-        setRemoteAdapter(R.id.listView, Intent(context, EventWidgetService::class.java))
-    }
-
-    val component = ComponentName(context, EventWidget::class.java)
-
-    AppWidgetManager.getInstance(context).apply {
-        updateAppWidget(component, rv)
-
-        val ids = getAppWidgetIds(component)
-        ids.forEach { updateAppWidget(it, rv) }
-
-        notifyAppWidgetViewDataChanged(ids, R.id.listView)
-    }
-
 }

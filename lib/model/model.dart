@@ -27,13 +27,21 @@ class Model {
   List<Event> _events = [];
   List<Event> get events => UnmodifiableListView<Event>(_events);
 
+  int _widgetIndex = 0;
+  int get widgetIndex => _widgetIndex;
+  set widgetIndex(int value) {
+    _widgetIndex = value;
+    save();
+  }
+
   Configuration cfg = Configuration.empty();
 
   static final Model _instance = Model._internal();
   Model._internal();
   factory Model.instance() => _instance;
 
-  Map<String, dynamic> toJson() => {'configuration': cfg, 'events': _events};
+  Map<String, dynamic> toJson() =>
+      {'configuration': cfg, 'events': _events, 'eventIndex': widgetIndex};
 
   void save() => SharedPreferences.getInstance().then(
       (prefs) => prefs.setString('hourglassModel', json.encode(toJson())));
@@ -41,6 +49,7 @@ class Model {
   void setProperties(Map<String, dynamic> map) {
     _events = map['events'].map<Event>((x) => Event.fromJson(x)).toList();
     cfg = Configuration.fromJson(map['configuration'] ?? {});
+    widgetIndex = map['eventIndex'] ?? 0;
   }
 
   void addEvent(Event e, {int at}) {
