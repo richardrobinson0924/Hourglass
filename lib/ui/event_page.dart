@@ -15,15 +15,15 @@ import '../model/model.dart';
 class EventPage extends StatefulWidget {
   final Event event;
 
-  EventPage({Key key, @required this.event}) : super(key: key);
+  EventPage({Key key, this.event}) : super(key: key);
 
   @override
   _EventPageState createState() => _EventPageState(event: event);
 }
 
 class _EventPageState extends State<EventPage> {
-  final Event event;
-  final int index;
+  Event event;
+  int index;
 
   Timer _timer;
   double roll = 0.0;
@@ -37,9 +37,11 @@ class _EventPageState extends State<EventPage> {
 
   final GlobalKey _menuKey = GlobalKey();
 
-  _EventPageState({Key key, @required this.event})
-      : index = Model.instance().events.indexOf(event),
-        super();
+  _EventPageState({Key key, @required event}) {
+    this.event = event ??
+        (ModalRoute.of(context).settings.arguments as ScreenArguments).event;
+    this.index = Model.instance().events.indexOf(this.event);
+  }
 
   @override
   void initState() {

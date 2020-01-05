@@ -21,6 +21,16 @@ void main() => runApp(MyApp());
 const platform =
     const MethodChannel('com.richardrobinson.countdown2.shared.data');
 
+class ScreenArguments {
+  static const root = '/';
+  static const add = '/add';
+  static const eventPage = '/event';
+
+  final Event event;
+
+  ScreenArguments(this.event);
+}
+
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
@@ -42,11 +52,16 @@ class MyApp extends StatelessWidget {
         accentColor: Colors.teal,
       ),
       themedWidgetBuilder: (context, theme) => MaterialApp(
+        initialRoute: ScreenArguments.root,
+        routes: {
+          ScreenArguments.root: (_) => MyHomePage(),
+          ScreenArguments.add: (_) => AddEventPage(),
+          ScreenArguments.eventPage: (_) => EventPage()
+        },
         debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',
         theme: theme,
         darkTheme: theme,
-        home: MyHomePage(),
       ),
     );
   }
@@ -79,18 +94,23 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
 
     platform.setMethodCallHandler((call) {
-      print('here');
+      switch (call.method) {
+        case "addEvent":
+          {
+            Future.delayed(Duration.zero,
+                () => Navigator.pushNamed(context, ScreenArguments.add));
+            break;
+          }
 
-      if (call.method == "update") {
-        final data = call.arguments;
+        case "update":
+          {
+            final data = call.arguments;
 
-        if (data != null && data >= 0) {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) =>
-                      EventPage(event: Model.instance().events[data])));
-        }
+            if (data != null && data >= 0) {
+              Navigator.pushNamed(context, ScreenArguments.eventPage,
+                  arguments: ScreenArguments(Model.instance().events[data]));
+            }
+          }
       }
 
       return null;
@@ -112,22 +132,7 @@ class _MyHomePageState extends State<MyHomePage> {
         if (raw != null) Model.instance().setProperties(json.decode(raw));
         isLoading = false;
       });
-
-      goToEventPageIfLaunchedFromAppWidget();
     });
-  }
-
-  void goToEventPageIfLaunchedFromAppWidget() async {
-    var data = await platform.invokeMethod<int>('getEventID');
-
-    print(data.toString() + "\n\n\n");
-
-    if (data != null && data >= 0) {
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => EventPage(event: Model.instance().events[data])));
-    }
   }
 
   @override

@@ -18,23 +18,6 @@ import kotlin.time.ExperimentalTime
 class MainActivity: FlutterActivity() {
   private var selectedEventIndex: Int = -1
 
-
-  @ExperimentalTime
-  override fun onStart() {
-    super.onStart()
-
-    val channel = MethodChannel(flutterView, FLUTTER_CHANNEL)
-
-    Log.e("", intent.action)
-
-    if (intent.action == EventWidget.OPEN_EVENT_INTENT) {
-      print("here2");
-      selectedEventIndex = intent.getIntExtra(EventWidget.EXTRA_ID, -1)
-
-      channel.invokeMethod("update", selectedEventIndex)
-    }
-  }
-
   @TargetApi(Build.VERSION_CODES.CUPCAKE)
   @ExperimentalTime
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,15 +26,14 @@ class MainActivity: FlutterActivity() {
 
     val channel = MethodChannel(flutterView, FLUTTER_CHANNEL)
 
-    print(intent.action)
-
-    Log.e("", intent.action)
-
     if (intent.action == EventWidget.OPEN_EVENT_INTENT) {
-      print("here2");
       selectedEventIndex = intent.getIntExtra(EventWidget.EXTRA_ID, -1)
 
       channel.invokeMethod("update", selectedEventIndex)
+    }
+
+    if (intent.action == Intent.ACTION_VIEW) {
+      channel.invokeMethod("addEvent", null)
     }
 
 

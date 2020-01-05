@@ -12,13 +12,15 @@
         android:icon="@mipmap/ic_launcher"
         android:label="Hourglass"
         tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".AddActivity"></activity>
+
         <receiver android:name=".EventWidget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="com.richardrobinson.countdown2.appwidget.openevent" />
+
                 <data android:mimeType="text/plain" />
             </intent-filter>
 
@@ -50,15 +52,18 @@
             <meta-data
                 android:name="io.flutter.app.android.SplashScreenUntilFirstFrame"
                 android:value="true" />
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="com.richardrobinson.countdown2.appwidget.openevent" />
+
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
