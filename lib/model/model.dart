@@ -4,8 +4,17 @@ import 'dart:convert';
 import 'package:countdown/model/extensions.dart';
 import 'package:countdown/model/prose.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+const platform = MethodChannel('com.richardrobinson.countdown2.shared.data');
+
+class Methods {
+  static const addEvent = 'addEvent';
+  static const launchEventPage = 'update';
+  static const updateWidget = 'updateWidget';
+}
 
 class Configuration {
   bool shouldUseAltFont = false;
@@ -43,13 +52,15 @@ class Model {
   Map<String, dynamic> toJson() =>
       {'configuration': cfg, 'events': _events, 'eventIndex': widgetIndex};
 
-  void save() => SharedPreferences.getInstance().then(
-      (prefs) => prefs.setString('hourglassModel', json.encode(toJson())));
+  Future<void> save() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('hourglassModel', json.encode(toJson()));
+  }
 
   void setProperties(Map<String, dynamic> map) {
     _events = map['events'].map<Event>((x) => Event.fromJson(x)).toList();
     cfg = Configuration.fromJson(map['configuration'] ?? {});
-    widgetIndex = map['eventIndex'] ?? 0;
+    _widgetIndex = map['eventIndex'] ?? 0;
   }
 
   void addEvent(Event e, {int at}) {
@@ -57,10 +68,19 @@ class Model {
 
     if (!e.isOver) cfg.notificationsManager.scheduleEvent(e);
     save();
+
+    if (events.length == 1) {
+      platform.invokeMethod(Methods.updateWidget);
+    }
   }
 
   void removeEventAt(int index) {
     final e = _events.removeAt(index);
+
+    if (index == widgetIndex) {
+      _widgetIndex = 0;
+      save().whenComplete(() => platform.invokeMethod(Methods.updateWidget));
+    }
 
     save();
     cfg.notificationsManager.cancel(e.hashCode);

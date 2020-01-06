@@ -3,53 +3,23 @@
     android:id="@+id/widget"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#00FFFFFF"
     android:gravity="center"
-    android:background="@drawable/shape"
     android:orientation="vertical">
 
     <TextView
-        android:id="@+id/title2"
+        android:id="@+id/text3"
+        style="@style/Widget.AppCompat.TextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:shadowColor="#000000"
+        android:shadowDy="2"
+        android:shadowRadius="3"
         android:text="@string/textview"
         android:textAllCaps="false"
-        android:textAppearance="@android:style/TextAppearance.Material.Medium" />
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
-
-        <TextView
-            android:id="@+id/days"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="2dp"
-            android:text="42"
-            android:textAppearance="@android:style/TextAppearance.Material.Large"
-            android:textSize="@dimen/textSize"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_marginEnd="10dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/d" />
-
-        <TextView
-            android:text="24"
-            android:textAppearance="@android:style/TextAppearance.Material.Large"
-            android:textStyle="bold"
-            android:textSize="@dimen/textSize"
-            android:layout_marginEnd="2dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/hours" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/h" />
-
-    </LinearLayout>
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textColor="#FAFAFA"
+        android:textSize="24sp" />
 
 </LinearLayout>

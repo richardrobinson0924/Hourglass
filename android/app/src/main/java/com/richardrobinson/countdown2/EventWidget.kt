@@ -18,51 +18,64 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class EventWidget : AppWidgetProvider() {
 
-    override fun onReceive(context: Context, intent: Intent) {
-        if (intent.hasExtra(WIDGET_IDS_KEY)) {
-            val ids: IntArray? = intent.extras!!.getIntArray(WIDGET_IDS_KEY)
-            if (ids != null) {
-                onUpdate(context, AppWidgetManager.getInstance(context), ids)
-            }
-        }
+	override fun onReceive(context: Context, intent: Intent) {
+		if (intent.hasExtra(WIDGET_IDS_KEY)) {
+			val ids: IntArray? = intent.extras!!.getIntArray(WIDGET_IDS_KEY)
+			if (ids != null) {
+				onUpdate(context, AppWidgetManager.getInstance(context), ids)
+			}
+		}
 
-        super.onReceive(context, intent)
-    }
+		super.onReceive(context, intent)
+	}
 
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        appWidgetIds.forEach { appWidgetId ->
-            val event = Event.parseEvent(context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE))
+	override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+		appWidgetIds.forEach { appWidgetId ->
+			val event = Event.parseEvent(context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE))
 
-            val pendingIntent = Intent(context, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                action = OPEN_EVENT_INTENT
-                putExtra(EXTRA_ID, event?.index ?: 0)
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            }.let {
-                intent -> PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-            }
+			val pendingIntent = Intent(context, MainActivity::class.java).apply {
+				addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+				action = OPEN_EVENT_INTENT
+				putExtra(EXTRA_ID, event?.index ?: 0)
+				putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+			}.let { intent ->
+				PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+			}
 
-            val views: RemoteViews = RemoteViews(context.packageName, R.layout.widget).apply {
-                setOnClickPendingIntent(R.id.widget, pendingIntent)
+			val views: RemoteViews = RemoteViews(context.packageName, R.layout.widget).apply {
+				setOnClickPendingIntent(R.id.widget, pendingIntent)
 
-                if (event != null) {
-                    setTextViewText(R.id.title2, event.title)
+				if (event != null) {
+					setTextViewText(R.id.text3, event.prettyString)
+				} else {
+					setTextViewText(R.id.text3, "No Events.")
+				}
+			}
 
-                    setTextViewText(R.id.days, event.timeRemaining.days.toString().padStart(2, '0'))
-                    setTextViewText(R.id.hours, event.timeRemaining.hours.toString().padStart(2, '0'))
-                }
-            }
-
-            appWidgetManager.updateAppWidget(appWidgetId, views)
-        }
-    }
+			appWidgetManager.updateAppWidget(appWidgetId, views)
+		}
+	}
 
 
-    companion object {
-        const val OPEN_EVENT_INTENT = "com.richardrobinson.countdown2.appwidget.openevent"
-        const val EXTRA_ID = "com.richardrobinson.countdown2.appwidget.ID"
-        const val WIDGET_IDS_KEY = "mywidgetproviderwidgetids"
+	companion object {
+		const val OPEN_EVENT_INTENT = "com.richardrobinson.countdown2.appwidget.openevent"
+		const val EXTRA_ID = "com.richardrobinson.countdown2.appwidget.ID"
+		const val WIDGET_IDS_KEY = "mywidgetproviderwidgetids"
 
-        private const val PREFS_NAME = "FlutterSharedPreferences"
-    }
+		private const val PREFS_NAME = "FlutterSharedPreferences"
+	}
 }
+
+@ExperimentalTime
+val Event.prettyString: String
+	get() {
+		if (isOver) return "$title | Completed"
+
+		var hrs = timeRemaining.hours
+		if (timeRemaining.minutes >= 30) hrs += 1
+
+		val daysStr = timeRemaining.days.toString()
+		val hrsStr = hrs.toString()
+
+		return "$title · ${daysStr}d ${hrsStr}h"
+	}

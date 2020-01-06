@@ -61,6 +61,10 @@ val Duration.days: Int
 val Duration.hours: Int
     get() = inHours.toInt().rem(24)
 
+@ExperimentalTime
+val Duration.minutes: Int
+    get() = inMinutes.toInt().rem(60)
+
 
 
 

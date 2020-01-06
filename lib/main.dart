@@ -18,9 +18,6 @@ import 'ui/widgets/radial_progress_indicator.dart';
 
 void main() => runApp(MyApp());
 
-const platform =
-    const MethodChannel('com.richardrobinson.countdown2.shared.data');
-
 class ScreenArguments {
   static const root = '/';
   static const add = '/add';
@@ -95,16 +92,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
     platform.setMethodCallHandler((call) {
       switch (call.method) {
-        case "addEvent":
+        case Methods.addEvent:
           {
             Future.delayed(Duration.zero,
                 () => Navigator.pushNamed(context, ScreenArguments.add));
             break;
           }
 
-        case "update":
+        case Methods.launchEventPage:
           {
             final data = call.arguments;
+
+            print(data);
 
             if (data != null && data >= 0) {
               Navigator.pushNamed(context, ScreenArguments.eventPage,
